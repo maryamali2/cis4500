@@ -1,0 +1,91 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header, footer {
+  background-color: #004080;
+  color: white;
+  text-align: center;
+  padding: 1em 0;
+}
+
+main {
+  padding: 1em;
+}
+
+h1, h2 {
+  color: #004080;
+}
+
+form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+form label {
+  display: block;
+  margin-top: 1em;
+}
+
+form input, form select, form button {
+  width: 100%;
+  padding: 0.5em;
+  margin-top: 0.5em;
+}
+
+button {
+  background-color: #004080;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0066cc;
+}
+
+#route-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+#route-list li {
+  background-color: #f2f2f2;
+  margin-bottom: 1em;
+  padding: 1em;
+  cursor: pointer;
+}
+
+#route-list li:hover {
+  background-color: #e6e6e6;
+}
+
+#cities-info {
+  margin-top: 1em;
+}
+
+.city-panel {
+  border-bottom: 1px solid #ccc;
+  padding: 1em 0;
+}
+
+.attractions {
+  margin-top: 0.5em;
+}
+
+.attractions ul {
+  list-style: none;
+  padding: 0;
+}
+
+.attractions li {
+  background-color: #f9f9f9;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+#back-to-routes {
+  margin-bottom: 1em;
+}
