@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Travel Planner - Home</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Travel Planner</h1>
+  </header>
+  <main>
+    <form id="travel-form">
+      <h2>Plan Your Trip</h2>
+      <label for="start-city">Start City:</label>
+      <input type="text" id="start-city" name="start-city" required>
+
+      <label for="end-city">End City:</label>
+      <input type="text" id="end-city" name="end-city" required>
+
+      <label for="max-cities">Maximum Intermediate Cities (1-3):</label>
+      <input type="number" id="max-cities" name="max-cities" min="1" max="3" value="1" required>
+
+      <label for="categories">Categories of Interest:</label>
+      <select id="categories" name="categories" multiple required>
+        <option value="active_life">Active Life</option>
+        <option value="arts_entertainment">Arts & Entertainment</option>
+        <option value="food">Food</option>
+        <option value="nightlife">Nightlife</option>
+        <option value="outdoors">Outdoors</option>
+        <option value="shopping">Shopping</option>
+      </select>
+
+      <button type="submit">Find Routes</button>
+    </form>
+  </main>
+  <footer>
+    <p>&copy; Project Group 12 Travel Planner</p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
