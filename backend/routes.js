@@ -55,11 +55,40 @@ const city_distance = async function (req, res) {
 }
 
 // Route 3: GET /attractions
-
+const route_attractions = async function (req, res) {
+    const categories = req.query.categories;
+   
+    connection.query(
+    `WITH temp AS (
+        (SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.subcategories, c.name
+        FROM Attractions a JOIN Cities c on a.cityid = c.id
+        WHERE a.categories LIKE '%${categories[1]}%')
+        UNION
+        (SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.subcategories, c.name
+        FROM Attractions a JOIN Cities c on a.cityid = c.id
+        WHERE a.categories LIKE '%${categories[2]}%')
+        UNION
+    (SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.subcategories, c.name
+    FROM Attractions a JOIN Cities c on a.cityid = c.id
+    WHERE a.categories LIKE '%${categories[3]}%'))
+    SELECT *
+    FROM temp
+    ORDER BY temp.rating desc
+    LIMIT 10;`, (err, data) => {
+      if (err) {
+          console.log(err);
+          res.json({});
+      } else {
+        res.json(data.rows);
+      }
+    });
+}
+   
    
    
 
 module.exports = {
     city_info,
-    city_distance
+    city_distance,
+    route_attractions
 }
