@@ -200,7 +200,47 @@ const numSubcategories = async function (req, res) {
     }
   });
 }
-   
+const cityRecs = async function(req, res) {
+ connection.query(
+`SELECT closeCity FROM
+((SELECT endCity as closeCity, Routes.distance as distance
+			FROM Routes JOIN Cities ON Cities.id = Routes.startCity
+			WHERE Cities.name = ${name]})
+		UNION
+(SELECT  startCity as closeCity, Routes.distance as distance
+			FROM Routes JOIN Cities ON Cities.id = Routes.endCity
+			WHERE Cities.name = ${name]})) as A
+ORDER BY distance
+LIMIT 10;`, (err, data) => {
+   if (err) {
+     console.log(err);
+     res.json({});
+   } else {
+     	res.json(data.rows[0]);
+     }
+   }
+ });
+}
+
+const routesByAttractions = async function(req, res) {
+ connection.query(
+`WITH B AS
+(SELECT * FROM Attractions 
+ORDER BY rating DESC)	
+SELECT * 
+FROM Routes JOIN B ON B.cityId = Routes.endCity
+LIMIT 10;`, (err, data) => {
+   if (err) {
+     console.log(err);
+     res.json({});
+   } else {
+     	res.json(data.rows[0]);
+     }
+   }
+ });
+}
+
+
 
 module.exports = {
     city_info,
@@ -208,5 +248,7 @@ module.exports = {
     route_attractions,
     routes, 
     subcategories,
-    numSubcategories
+    numSubcategories,
+    cityRecs,
+    routesByAttractions
 }
