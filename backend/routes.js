@@ -243,12 +243,14 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIds = req.query.cityIds;
 
   connection.query(
- `SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
- FROM Cities c
- LEFT JOIN Attractions a ON c.id = a.cityid
- WHERE c.id IN (${cityIds})
- GROUP BY c.id, c.name
- ORDER BY NumAttractions DESC;`, (err, data) => {
+ `WITH temp AS (SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
+  FROM Cities c
+  LEFT JOIN Attractions a ON c.id = a.cityid
+  WHERE c.id IN (${cityIds})
+  GROUP BY c.id, c.name
+  ORDER BY NumAttractions DESC)
+ SELECT temp.CityName
+ FROM temp;`, (err, data) => {
     if (err) {
       console.log(err);
       res.json({});
