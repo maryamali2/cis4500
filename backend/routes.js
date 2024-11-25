@@ -200,16 +200,17 @@ const numSubcategories = async function (req, res) {
     }
   });
 }
+
 const cityRecs = async function(req, res) {
  connection.query(
 `SELECT closeCity FROM
 ((SELECT endCity as closeCity, Routes.distance as distance
 			FROM Routes JOIN Cities ON Cities.id = Routes.startCity
-			WHERE Cities.name = ${name]})
+			WHERE Cities.name = ${name})
 		UNION
 (SELECT  startCity as closeCity, Routes.distance as distance
 			FROM Routes JOIN Cities ON Cities.id = Routes.endCity
-			WHERE Cities.name = ${name]})) as A
+			WHERE Cities.name = ${name})) as A
 ORDER BY distance
 LIMIT 10;`, (err, data) => {
    if (err) {
@@ -218,8 +219,7 @@ LIMIT 10;`, (err, data) => {
    } else {
      	res.json(data.rows[0]);
      }
-   }
- });
+   });
 }
 
 const routesByAttractions = async function(req, res) {
@@ -236,10 +236,27 @@ LIMIT 10;`, (err, data) => {
    } else {
      	res.json(data.rows[0]);
      }
-   }
- });
+   });
 }
 
+const rankCitiesByUniqueAttractions = async function(req, res) {
+  const cityIds = req.query.cityIds;
+
+  connection.query(
+ `SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
+ FROM Cities c
+ LEFT JOIN Attractions a ON c.id = a.cityid
+ WHERE c.id IN (${cityIds})
+ GROUP BY c.id, c.name
+ ORDER BY NumAttractions DESC;`, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else {
+        res.json(data.rows);
+      }
+    });
+ }
 
 
 module.exports = {
