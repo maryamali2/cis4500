@@ -200,8 +200,6 @@ const numSubcategories = async function (req, res) {
     }
   });
 }
-
-// hello
    
 
 module.exports = {
