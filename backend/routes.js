@@ -98,10 +98,12 @@ const routes = async function (req, res) {
  
   if (numInt == 0) {
     connection.query(
-      `SELECT src.name, src.state, tgt.name, tgt.state, (r1.distance) AS total_distance
+      `SELECT src.name, src.state, src.id, tgt.name, tgt.state, tgt.id, (r1.distance) AS total_distance, AVG(AVG(src_rating) + AVG(tgt_rating)) AS avg_rating
       FROM routes r1
          JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
+         JOIN (SELECT cityid, stars FROM attractions) src_rating ON src.id = src_rating.cityid
          JOIN (SELECT id, name, state FROM cities) tgt ON r1.endCity = tgt.id
+         JOIN (SELECT cityid, stars FROM attractions) tgt_rating ON tgt.id = tgt_rating.cityid
       WHERE src.name LIKE '%${startCity}%' AND src.state LIKE '%${startState}%' AND tgt.name LIKE '%${endCity}%' AND tgt.state LIKE '%${endState}%'`, (err, data) => {
         if (err) {
             console.log(err);
@@ -112,7 +114,7 @@ const routes = async function (req, res) {
       });
   } else if (numInt == 1) {
     connection.query(
-      `SELECT src.name, src.state, int1.name, int1.state, tgt.name, tgt.state, (r1.distance + r2.distance) AS total_distance
+      `SELECT src.name, src.state, src.id, int1.name, int1.state, int1.id, tgt.name, tgt.state, tgt.id, (r1.distance + r2.distance) AS total_distance
       FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
          JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
          JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
@@ -127,7 +129,7 @@ const routes = async function (req, res) {
       });
   } else if (numInt == 2) {
     connection.query(
-      `SELECT src.name, src.state, int1.name, int1.state, int2.name, int2.state, tgt.name, tgt.state, (r1.distance + r2.distance + r3.distance) AS total_distance
+      `SELECT src.name, src.state, src.id, int1.name, int1.state, int1.id, int2.name, int2.state, int2.id, tgt.name, tgt.state, tgt.id, (r1.distance + r2.distance + r3.distance) AS total_distance
       FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
          JOIN routes r3 ON r2.endCity = r3.startCity
          JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
@@ -144,7 +146,7 @@ const routes = async function (req, res) {
       });
   } else if (numInt == 3) {
     connection.query(
-      `SELECT src.name, src.state, int1.name, int1.state, int2.name, int2.state, int3.name, int3.state, tgt.name, tgt.state, (r1.distance + r2.distance + r3.distance + r4.distance) AS total_distance
+      `SELECT src.name, src.state, src.id, int1.name, int1.state, int1.id, int2.name, int2.state, int2.id, int3.name, int3.state, int3.id, tgt.name, tgt.state, tgt.id, (r1.distance + r2.distance + r3.distance + r4.distance) AS total_distance
       FROM routes r1 JOIN routes r2 ON r1.endcity = r2.startcity
          JOIN routes r3 ON r2.endcity = r3.startcity
          JOIN routes r4 ON r3.endcity = r4.startcity
@@ -201,16 +203,19 @@ const numSubcategories = async function (req, res) {
   });
 }
 
+// Route 7: GET /cityrecs/:id
 const cityRecs = async function(req, res) {
- connection.query(
+const id = req.params.id;
+
+connection.query(
 `SELECT closeCity FROM
 ((SELECT endCity as closeCity, Routes.distance as distance
 			FROM Routes JOIN Cities ON Cities.id = Routes.startCity
-			WHERE Cities.name = ${name})
+			WHERE Cities.id = ${id})
 		UNION
 (SELECT  startCity as closeCity, Routes.distance as distance
 			FROM Routes JOIN Cities ON Cities.id = Routes.endCity
-			WHERE Cities.name = ${name})) as A
+			WHERE Cities.id = ${id})) as A
 ORDER BY distance
 LIMIT 10;`, (err, data) => {
    if (err) {
@@ -222,6 +227,7 @@ LIMIT 10;`, (err, data) => {
    });
 }
 
+// Route 8: GET /routesbyattractions
 const routesByAttractions = async function(req, res) {
  connection.query(
 `WITH B AS
@@ -239,6 +245,7 @@ LIMIT 10;`, (err, data) => {
    });
 }
 
+// Route 9: GET /cityrankbyattractions
 const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIds = req.query.cityIds;
 
@@ -269,5 +276,6 @@ module.exports = {
     subcategories,
     numSubcategories,
     cityRecs,
-    routesByAttractions
+    routesByAttractions, 
+    rankCitiesByUniqueAttractions
 }

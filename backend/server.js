@@ -12,15 +12,15 @@ app.use(cors({
 // provide their handlers that we implemented in routes.js
 
 // REPLACE THESE WITH OUR ROUTES
-// app.get('/author/:type', routes.author);
-// app.get('/random', routes.random);
-// app.get('/song/:song_id', routes.song);
-// app.get('/album/:album_id', routes.album);
-// app.get('/albums', routes.albums);
-// app.get('/album_songs/:album_id', routes.album_songs);
-// app.get('/top_songs', routes.top_songs);
-// app.get('/top_albums', routes.top_albums);
-// app.get('/search_songs', routes.search_songs);
+app.get('/cities/:id', routes.city_info);
+app.get('/cities/distance/:businessid', routes.city_distance);
+app.get('/attractions', routes.route_attractions);
+app.get('/routes/:numInt', routes.routes);
+app.get('/subcategories/:cityid', routes.subcategories);
+app.get('/numSubcategories/:cityid', routes.numSubcategories);
+app.get('/cityrecs/:id', routes.cityRecs);
+app.get('/routesbyattractions', routes.routesByAttractions);
+app.get('/cityrankbyattractions', routes.rankCitiesByUniqueAttractions);
 
 app.listen(config.server_port, () => {
   console.log(`Server running at http://${config.server_host}:${config.server_port}/`)
