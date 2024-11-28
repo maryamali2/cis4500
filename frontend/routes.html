@@ -1,47 +1,708 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title><!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Travel Planner - Routes</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header>
-    <h1>Travel Planner</h1>
-  </header>
-  <main>
-    <section id="route-list">
-      <h2>Available Routes</h2>
-      <label for="filter">Sort By:</label>
-      <select id="filter">
-        <option value="distance">Total Distance</option>
-        <option value="rating">Average Attraction Rating</option>
-      </select>
-      <ul id="routes">
-        <!-- Routes will be dynamically inserted here -->
-      </ul>
-    </section>
-    <section id="route-details" style="display: none;">
-      <h2>Route Details</h2>
-      <button id="back-to-routes">Back to Routes</button>
-      <div id="cities-info">
-        <!-- City information and attractions will be displayed here -->
-      </div>
-    </section>
-  </main>
-  <footer>
-    <p>&copy; Project Group 12 Travel Planner</p>
-  </footer>
-  <script src="script.js"></script>
-</body>
-</html>
-</title>
-</head>
-<body>
+    <title>routes.</title>
+    <!-- Minimalistic favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,...">
+    <style>
+        body {
+            font-family: 'Garamond', serif;
+            margin: 0;
+            background-color: #fafafa;
+            color: #333;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
+        .top-section {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 48px; /* Adjusted to match the title size in index.html */
+        }
+
+        .back-button {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 18px;
+        }
+
+        .filter-section {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .filter-section label {
+            display: block;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .filter-section .custom-select {
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .custom-select input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            font-family: 'Garamond', serif;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        .custom-select .options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1;
+        }
+
+        .custom-select .options div {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Garamond', serif;
+        }
+
+        .custom-select .options div:hover {
+            background-color: #f0f0f0;
+        }
+
+        .custom-select .selected-options {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .custom-select .selected-options .tag {
+            background-color: #e0e0e0;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-family: 'Garamond', serif;
+            display: flex;
+            align-items: center;
+        }
+
+        .custom-select .selected-options .tag .remove {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+            font-family: 'Garamond', serif;
+        }
+
+        .minimal-button {
+            margin-top: 20px;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: 'Garamond', serif;
+            background: none;
+            border: 1px solid #ccc;
+            padding: 10px 20px;
+            transition: background-color 0.3s;
+        }
+
+        .minimal-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .routes-list {
+            list-style-type: none;
+            padding: 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .routes-list li {
+            background-color: #fff;
+            margin-bottom: 15px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            font-size: 18px;
+            font-family: 'Garamond', serif;
+            cursor: pointer;
+        }
+
+        .routes-list li:hover {
+            background-color: #f0f0f0;
+        }
+
+        .city-route {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .city-route:hover {
+            text-decoration: underline;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            font-family: 'Garamond', serif;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+            font-size: 18px;
+        }
+
+        .close {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+        }
+
+        .modal ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .modal ul li {
+            margin-bottom: 10px;
+        }
+
+        .results-count {
+            font-size: 18px;
+            margin-top: 10px;
+            font-family: 'Garamond', serif;
+        }
+
+        @media screen and (max-height: 700px) {
+            .routes-list {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-section">
+        <h1>routes.</h1>
+        <button onclick="goBack()" class="minimal-button back-button">Back</button>
+    </div>
+
+    <div class="filter-section">
+        <label for="sort-by">Sort By:</label>
+        <select id="sort-by" class="minimal-input" style="font-family: 'Garamond', serif; font-size: 16px; padding: 10px; width: 100%; max-width: 500px; margin: 0 auto; border: 1px solid #ccc; box-sizing: border-box;">
+            <option value="distance">Total Distance (Ascending)</option>
+            <option value="distance-desc">Total Distance (Descending)</option>
+            <option value="rating">Average Attraction Rating (Ascending)</option>
+            <option value="rating-desc">Average Attraction Rating (Descending)</option>
+        </select>
+
+        <label for="categories">Filter By Categories (Max 3):</label>
+        <div id="category-select" class="custom-select">
+            <input type="text" id="category-input" placeholder="Select Categories" readonly>
+            <div class="options" id="category-options">
+                <!-- Categories will be populated here -->
+            </div>
+            <div class="selected-options" id="selected-categories"></div>
+        </div>
+        <div id="category-error" class="error-message"></div>
+
+        <button onclick="applyFilters()" class="minimal-button">Apply Filters</button>
+        <button onclick="resetFilters()" class="minimal-button">Reset Filters</button>
+    </div>
+
+    <div class="results-count" id="results-count">Total Results: 0</div>
+
+    <ul id="routes-list" class="routes-list">
+        <!-- Routes will be listed here -->
+    </ul>
+
+    <!-- Route Details Popup -->
+    <div id="route-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRouteModal()">&times;</span>
+            <h2>Route Details</h2>
+            <p id="route-info"></p>
+            <ul id="route-cities-list">
+                <!-- Cities in the route will be listed here -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- City Info Popup -->
+    <div id="city-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCityModal()">&times;</span>
+            <h2 id="city-name">City Name</h2>
+            <p id="city-coordinates">Latitude: , Longitude: </p>
+
+            <h3>Available Subcategories:</h3>
+            <div id="subcategory-select" class="custom-select" style="position: relative;">
+                <input type="text" id="subcategory-input" placeholder="Select Subcategories" readonly>
+                <div class="options" id="subcategory-options" style="position: absolute;">
+                    <!-- Subcategories will be populated here -->
+                </div>
+                <div class="selected-options" id="selected-subcategories"></div>
+            </div>
+
+            <button onclick="applyAttractionFilters()" class="minimal-button">Apply Filters</button>
+            <button onclick="resetAttractionFilters()" class="minimal-button">Reset Filters</button>
+
+            <h3>Attractions:</h3>
+            <ul id="attractions-list">
+                <!-- Attractions will be listed here -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript code for routes.html
+
+        // Updated categories as per your list
+        const sampleCategories = [
+            'Event Planning & Services',
+            'Local Flavor',
+            'Shopping',
+            'Financial Services',
+            'Local Services',
+            'Restaurants',
+            'Hotel & Travel',
+            'Arts & Entertainment',
+            'Arts & Crafts',
+            'Active Life',
+            'Education',
+            'Food',
+            'Health & Medical',
+            'Nightlife',
+            'Beauty & Spas',
+            'Home Services',
+            'Mass Media',
+            'Automotive',
+            'Religious Organizations',
+            'Public Services & Government'
+        ];
+
+        // Sample subcategories (for demonstration purposes)
+        const sampleSubcategories = {
+            'Food': ['Restaurants', 'Cafes', 'Street Food'],
+            'Arts & Entertainment': ['Museums', 'Art Galleries', 'Theaters'],
+            // Add more subcategories as needed
+        };
+
+        // Load saved form data and filters
+        const formData = JSON.parse(localStorage.getItem('formData'));
+        let filters = JSON.parse(localStorage.getItem('filters')) || { categories: [], sortBy: 'distance' };
+
+        // Function to generate random routes based on form data
+        function generateSampleRoutes() {
+            const routes = [];
+            const maxIntermediateCities = formData.maxCities;
+            const numRoutes = 10; // Generate 10 sample routes
+            const possibleCities = ['CityX', 'CityY', 'CityZ', 'CityW', 'CityV', 'CityU', 'CityT', 'CityS', 'CityR', 'CityQ'];
+
+            for (let i = 0; i < numRoutes; i++) {
+                const numIntermediateCities = Math.floor(Math.random() * maxIntermediateCities) + 1;
+                const intermediateCities = [];
+
+                // Ensure we don't include the source or destination city as intermediate cities
+                const availableCities = possibleCities.filter(city => city !== formData.sourceCity && city !== formData.destinationCity);
+
+                for (let j = 0; j < numIntermediateCities; j++) {
+                    const randomIndex = Math.floor(Math.random() * availableCities.length);
+                    intermediateCities.push(availableCities.splice(randomIndex, 1)[0]);
+                }
+
+                const routeCities = [formData.sourceCity, ...intermediateCities, formData.destinationCity];
+
+                const distance = Math.floor(Math.random() * 1000) + 100; // Random distance between 100 and 1100 miles
+                const rating = (Math.random() * 2 + 3).toFixed(1); // Random rating between 3.0 and 5.0
+
+                // Generate sample attractions for each city
+                const attractions = {};
+                routeCities.forEach(city => {
+                    const cityAttractions = [];
+                    const numAttractions = Math.floor(Math.random() * 5) + 1; // 1 to 5 attractions
+                    for (let k = 0; k < numAttractions; k++) {
+                        const randomCategory = sampleCategories[Math.floor(Math.random() * sampleCategories.length)];
+                        const subcategories = sampleSubcategories[randomCategory] || ['General'];
+                        const randomSubcategory = subcategories[Math.floor(Math.random() * subcategories.length)];
+                        cityAttractions.push({
+                            name: `${randomSubcategory} in ${city} ${k + 1}`,
+                            category: randomCategory,
+                            subcategory: randomSubcategory
+                        });
+                    }
+                    attractions[city] = cityAttractions;
+                });
+
+                routes.push({
+                    cities: routeCities,
+                    distance: distance,
+                    rating: rating,
+                    attractions: attractions
+                });
+            }
+
+            return routes;
+        }
+
+        // Generate sample routes
+        let sampleRoutes = generateSampleRoutes();
+
+        // Populate category options
+        const categoryOptionsContainer = document.getElementById('category-options');
+        sampleCategories.forEach(category => {
+            const optionDiv = document.createElement('div');
+            optionDiv.textContent = category;
+            optionDiv.dataset.value = category;
+            optionDiv.addEventListener('click', () => selectCategory(optionDiv));
+            categoryOptionsContainer.appendChild(optionDiv);
+        });
+
+        // Selected categories
+        const selectedCategoriesContainer = document.getElementById('selected-categories');
+        let selectedCategories = filters.categories || [];
+
+        function updateSelectedCategories() {
+            selectedCategoriesContainer.innerHTML = '';
+            selectedCategories.forEach(category => {
+                const tagDiv = document.createElement('div');
+                tagDiv.classList.add('tag');
+                tagDiv.textContent = category;
+                const removeSpan = document.createElement('span');
+                removeSpan.classList.add('remove');
+                removeSpan.textContent = '×';
+                removeSpan.addEventListener('click', () => removeCategory(category));
+                tagDiv.appendChild(removeSpan);
+                selectedCategoriesContainer.appendChild(tagDiv);
+            });
+            document.getElementById('category-input').value = '';
+            document.getElementById('category-error').textContent = '';
+        }
+
+        function selectCategory(optionDiv) {
+            const category = optionDiv.dataset.value;
+            if (!selectedCategories.includes(category)) {
+                if (selectedCategories.length < 3) {
+                    selectedCategories.push(category);
+                    updateSelectedCategories();
+                } else {
+                    document.getElementById('category-error').textContent = 'You can select up to 3 categories only.';
+                }
+            }
+        }
+
+        function removeCategory(category) {
+            selectedCategories = selectedCategories.filter(cat => cat !== category);
+            updateSelectedCategories();
+        }
+
+        // Show/hide category options
+        const categoryInput = document.getElementById('category-input');
+        categoryInput.addEventListener('click', () => {
+            const options = document.getElementById('category-options');
+            options.style.display = options.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!document.getElementById('category-select').contains(event.target)) {
+                document.getElementById('category-options').style.display = 'none';
+            }
+        });
+
+        // Set sort by value
+        document.getElementById('sort-by').value = filters.sortBy;
+
+        // Load routes
+        function loadRoutes() {
+            let routes = sampleRoutes;
+
+            // Filter by categories
+            if (selectedCategories.length > 0) {
+                routes = routes.filter(route => {
+                    return selectedCategories.some(category => {
+                        return Object.values(route.attractions).flat().some(attraction => attraction.category === category);
+                    });
+                });
+            }
+
+            // Sort routes
+            if (filters.sortBy === 'distance') {
+                routes.sort((a, b) => a.distance - b.distance);
+            } else if (filters.sortBy === 'distance-desc') {
+                routes.sort((a, b) => b.distance - a.distance);
+            } else if (filters.sortBy === 'rating') {
+                routes.sort((a, b) => a.rating - b.rating);
+            } else if (filters.sortBy === 'rating-desc') {
+                routes.sort((a, b) => b.rating - a.rating);
+            }
+
+            // Save filters to local storage
+            filters.categories = selectedCategories;
+            localStorage.setItem('filters', JSON.stringify(filters));
+
+            // Display total results
+            document.getElementById('results-count').textContent = `Total Results: ${routes.length}`;
+
+            // Display routes
+            const routesList = document.getElementById('routes-list');
+            routesList.innerHTML = '';
+            routes.forEach((route, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    Route through ${route.cities.map(city => `<span class="city-route" data-city="${city}" data-route-index="${index}">${city}</span>`).join(' ➔ ')}<br>
+                    Total Distance: ${route.distance} miles<br>
+                    Average Attraction Rating: ${route.rating}
+                `;
+                li.addEventListener('click', (event) => {
+                    if (!event.target.classList.contains('city-route')) {
+                        openRouteModal(route);
+                    }
+                });
+                // Add event listener for cities
+                li.querySelectorAll('.city-route').forEach(cityElement => {
+                    cityElement.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Prevent route modal from opening
+                        const cityName = event.target.dataset.city;
+                        const routeIndex = event.target.dataset.routeIndex;
+                        openCityModal(routes[routeIndex], cityName);
+                    });
+                });
+                routesList.appendChild(li);
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            filters.sortBy = document.getElementById('sort-by').value;
+            loadRoutes();
+        }
+
+        // Reset filters
+        function resetFilters() {
+            selectedCategories = [];
+            updateSelectedCategories();
+            filters.sortBy = 'distance';
+            document.getElementById('sort-by').value = 'distance';
+            loadRoutes();
+        }
+
+        // Go back to previous page
+        function goBack() {
+            window.history.back();
+        }
+
+        // Route Modal functions
+        function openRouteModal(route) {
+            const routeModal = document.getElementById('route-modal');
+            const routeInfo = document.getElementById('route-info');
+            const routeCitiesList = document.getElementById('route-cities-list');
+
+            routeInfo.innerHTML = `
+                Route through ${route.cities.join(' ➔ ')}<br>
+                Total Distance: ${route.distance} miles<br>
+                Average Attraction Rating: ${route.rating}
+            `;
+
+            routeCitiesList.innerHTML = '';
+            route.cities.forEach(city => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="city-route" data-city="${city}">${city}</span>`;
+                li.addEventListener('click', () => {
+                    openCityModal(route, city);
+                });
+                routeCitiesList.appendChild(li);
+            });
+
+            localStorage.setItem('currentRoute', JSON.stringify(route));
+            routeModal.style.display = 'block';
+        }
+
+        function closeRouteModal() {
+            document.getElementById('route-modal').style.display = 'none';
+        }
+
+        // City Modal functions
+        function openCityModal(route, cityName) {
+            const cityModal = document.getElementById('city-modal');
+            const cityNameElement = document.getElementById('city-name');
+            const cityCoordinatesElement = document.getElementById('city-coordinates');
+
+            cityNameElement.textContent = cityName;
+            cityCoordinatesElement.textContent = `Latitude: 0, Longitude: 0`; // Replace with actual data
+
+            const cityAttractions = route.attractions[cityName] || [];
+
+            // Get available subcategories in this city
+            const availableSubcategories = [...new Set(cityAttractions.map(attraction => attraction.subcategory))];
+
+            // Populate subcategory options
+            const subcategoryOptionsContainer = document.getElementById('subcategory-options');
+            subcategoryOptionsContainer.innerHTML = '';
+            availableSubcategories.forEach(subcat => {
+                const optionDiv = document.createElement('div');
+                optionDiv.textContent = subcat;
+                optionDiv.dataset.value = subcat;
+                optionDiv.addEventListener('click', () => selectSubcategory(optionDiv));
+                subcategoryOptionsContainer.appendChild(optionDiv);
+            });
+
+            // Selected subcategories
+            selectedSubcategories = availableSubcategories.slice(0); // Copy all subcategories by default
+            updateSelectedSubcategories();
+
+            // Adjust position of subcategory options to appear within the modal
+            subcategoryOptionsContainer.style.top = `${subcategoryInput.offsetHeight}px`;
+
+            // Save current city to local storage
+            localStorage.setItem('currentCity', cityName);
+            localStorage.setItem('currentAttractions', JSON.stringify(cityAttractions));
+
+            // Load attractions
+            loadAttractions();
+
+            cityModal.style.display = 'block';
+        }
+
+        function closeCityModal() {
+            document.getElementById('city-modal').style.display = 'none';
+        }
+
+        // Subcategory selection
+        let selectedSubcategories = [];
+        const selectedSubcategoriesContainer = document.getElementById('selected-subcategories');
+
+        function updateSelectedSubcategories() {
+            selectedSubcategoriesContainer.innerHTML = '';
+            selectedSubcategories.forEach(subcat => {
+                const tagDiv = document.createElement('div');
+                tagDiv.classList.add('tag');
+                tagDiv.textContent = subcat;
+                const removeSpan = document.createElement('span');
+                removeSpan.classList.add('remove');
+                removeSpan.textContent = '×';
+                removeSpan.addEventListener('click', () => removeSubcategory(subcat));
+                tagDiv.appendChild(removeSpan);
+                selectedSubcategoriesContainer.appendChild(tagDiv);
+            });
+            document.getElementById('subcategory-input').value = '';
+        }
+
+        function selectSubcategory(optionDiv) {
+            const subcat = optionDiv.dataset.value;
+            if (!selectedSubcategories.includes(subcat)) {
+                selectedSubcategories.push(subcat);
+                updateSelectedSubcategories();
+            }
+        }
+
+        function removeSubcategory(subcat) {
+            selectedSubcategories = selectedSubcategories.filter(sc => sc !== subcat);
+            updateSelectedSubcategories();
+        }
+
+        // Show/hide subcategory options
+        const subcategoryInput = document.getElementById('subcategory-input');
+        subcategoryInput.addEventListener('click', () => {
+            const options = document.getElementById('subcategory-options');
+            options.style.display = options.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!document.getElementById('subcategory-select').contains(event.target)) {
+                document.getElementById('subcategory-options').style.display = 'none';
+            }
+        });
+
+        function loadAttractions() {
+            const cityAttractions = JSON.parse(localStorage.getItem('currentAttractions'));
+            const attractionsList = document.getElementById('attractions-list');
+
+            let filteredAttractions = cityAttractions;
+
+            if (selectedSubcategories.length > 0) {
+                filteredAttractions = cityAttractions.filter(attraction => selectedSubcategories.includes(attraction.subcategory));
+            }
+
+            attractionsList.innerHTML = '';
+            filteredAttractions.forEach(attraction => {
+                const li = document.createElement('li');
+                li.textContent = `${attraction.name} (${attraction.subcategory})`;
+                attractionsList.appendChild(li);
+            });
+        }
+
+        function applyAttractionFilters() {
+            loadAttractions();
+        }
+
+        // Reset attraction filters
+        function resetAttractionFilters() {
+            const cityAttractions = JSON.parse(localStorage.getItem('currentAttractions'));
+            selectedSubcategories = [...new Set(cityAttractions.map(attraction => attraction.subcategory))];
+            updateSelectedSubcategories();
+            loadAttractions();
+        }
+
+        // Initialize routes on page load
+        window.onload = function() {
+            if (!formData || !formData.sourceCity || !formData.destinationCity || !formData.maxCities) {
+                alert('Please fill out the form correctly.');
+                window.location.href = 'index.html';
+                return;
+            }
+            updateSelectedCategories();
+            loadRoutes();
+        };
+
+        // Close modals when clicking outside of them
+        window.onclick = function(event) {
+            const routeModal = document.getElementById('route-modal');
+            const cityModal = document.getElementById('city-modal');
+            if (event.target == routeModal) {
+                closeRouteModal();
+            }
+            if (event.target == cityModal) {
+                closeCityModal();
+            }
+        };
+    </script>
 </body>
 </html>
