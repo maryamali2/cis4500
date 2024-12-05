@@ -1,0 +1,9 @@
+{
+    "rds_host": "database-2.cy8cgnqxcxev.us-east-1.rds.amazonaws.com",
+    "rds_port": "5432",
+    "rds_user": "postgres",
+    "rds_password": "deNucR+M7j2F",
+    "rds_db": "swiftify",
+    "server_host": "localhost",
+    "server_port": "8080"
+  }
