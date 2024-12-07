@@ -385,5 +385,7 @@ module.exports = {
   cityRecs,
   routesByAttractions, 
   rankCitiesByUniqueAttractions,
-  testRoute
+  testRoute,
+  backupAttractions,
+  randomAttraction
 };
