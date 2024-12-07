@@ -68,6 +68,7 @@ const city_distance = async function (req, res) {
 }
 
 // Route 3: GET /attractions?cityId=1&category1=Automotive&category2=...
+// COMPLEX QUERY
 const route_attractions = async function (req, res) {
   const id = parseInt(req.query.cityId, 10);
   const category1 = req.query.category1;
@@ -315,6 +316,36 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
         return res.status(500).json({ error: 'Database error' });
       }
       res.json(data.rows.map(row => row.cityname));
+    }
+  );
+}
+
+// Route 10: GET /randomAttraction?cityId=19511&attractionIds=1,2,3,...
+const randomAttraction = async function(req, res) {
+  const cityId = req.query.cityId;
+  const attractionIds = req.query.attractionIds; 
+  if (!attractionIds) {
+    return res.status(400).json({ error: 'attractionids query param required' });
+  }
+
+  connection.query(
+    `WITH temp as (
+      SELECT *
+      FROM attractions
+      WHERE id NOT IN (${attractionIds})
+    )
+    SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
+    FROM temp t JOIN CityInfo c on t.cityid = c.id
+    WHERE c.id = ${cityId}
+    ORDER BY RANDOM()
+    LIMIT 1`,
+    [],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(data.rows[0]);
     }
   );
 }
