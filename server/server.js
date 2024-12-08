@@ -19,6 +19,9 @@ app.get('/numSubcategories', routes.numSubcategories); // works
 app.get('/cityrecs', routes.cityRecs); // works
 app.get('/routesbyattractions', routes.routesByAttractions); // works
 app.get('/cityrankbyattractions', routes.rankCitiesByUniqueAttractions); // works
+app.get('/backupAttractions', routes.backupAttractions);
+app.get('/randomAttraction', routes.randomAttraction);
+
 
 app.listen(config.server_port, () => {
   console.log(`Server running at http://${config.server_host}:${config.server_port}/`);
