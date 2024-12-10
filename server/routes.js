@@ -103,7 +103,7 @@ const routes = async function (req, res) {
 
   if (numInt == 0) {
     connection.query(
-    `SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2
+    `SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, r1.distance as total_distance
     FROM CityInfo c1 JOIN Routes r1 on c1.id = r1.startcity JOIN CityInfo c2 on c2.id = r1.endcity
     WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}';`, (err, data) => {
        if (err) {
@@ -128,7 +128,7 @@ const routes = async function (req, res) {
           AND r2.endcity NOT IN (r1.startcity, r2.startcity)
   ORDER BY total_distance
   LIMIT 20)
-SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3
+SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, outertemp.total_distance
 FROM CityInfo c1, CityInfo c2, CityInfo c3, outertemp
 WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3;`, (err, data) => {
          if (err) {
@@ -155,7 +155,7 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3;`, 
           AND r3.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity)
   ORDER BY total_distance
   LIMIT 20)
-SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4
+SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4, outertemp.total_distance
 FROM CityInfo c1, CityInfo c2, CityInfo c3, CityInfo c4, outertemp
 WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND c4.id = outertemp.c4;`, (err, data) => {
          if (err) {
@@ -183,7 +183,7 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND
           AND r4.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity, r4.startcity)
   ORDER BY total_distance
   LIMIT 20)
-SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4, c5.name as city5, c5.state as state5
+SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4, c5.name as city5, c5.state as state5, outertemp.total_distance
 FROM CityInfo c1, CityInfo c2, CityInfo c3, CityInfo c4, CityInfo c5, outertemp
 WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND c4.id = outertemp.c4 AND c5.id = outertemp.c5;`, (err, data) => {
          if (err) {
