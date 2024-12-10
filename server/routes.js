@@ -397,6 +397,30 @@ const backupAttractions = async function(req, res) {
   );
 }
 
+// Route 11: GET /cityNumRoutesAndAvgDist?cityId=11901
+// This query returns how many cities this city connects to as a source and the average distance
+// of these pairwise routes
+const cityNumRoutesAndAvgDist = async function(req, res) {
+  const cityId = parseInt(req.query.cityId,10);
+  if (!cityId) {
+    return res.status(400).json({ error: 'cityId query param required' });
+
+  }
+  connection.query(
+    `SELECT COUNT(DISTINCT r.endCity) as numRoutes, AVG(r.distance) as avg_distance
+    FROM CityInfo c JOIN Routes r on c.id = r.startcity
+    WHERE c.id = ${cityId}`,
+    [],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(data.rows);
+    }
+  );
+}
+
 module.exports = {
   city_info,
   city_distance,
@@ -409,5 +433,6 @@ module.exports = {
   rankCitiesByUniqueAttractions,
   testRoute,
   backupAttractions,
-  randomAttraction
+  randomAttraction,
+  cityNumRoutesAndAvgDist
 };

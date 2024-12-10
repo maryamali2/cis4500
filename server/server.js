@@ -21,6 +21,7 @@ app.get('/routesbyattractions', routes.routesByAttractions); // works
 app.get('/cityrankbyattractions', routes.rankCitiesByUniqueAttractions); // works
 app.get('/backupAttractions', routes.backupAttractions);
 app.get('/randomAttraction', routes.randomAttraction);
+app.get('/cityNumRoutesAndAvgDist', routes.cityNumRoutesAndAvgDist);
 
 
 app.listen(config.server_port, () => {
