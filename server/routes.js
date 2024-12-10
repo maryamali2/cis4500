@@ -103,27 +103,17 @@ const routes = async function (req, res) {
 
   if (numInt == 0) {
     connection.query(
-     `WITH outertemp AS
-     (WITH temp as (
-         SELECT c1.id as sourceid, c2.id as targetid
-         FROM CityInfo c1, CityInfo c2
-         WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}'
-         )
-     SELECT r1.startcity as c1, r1.endcity as c2, r1.distance AS total_distance
-     FROM Routes r1, temp
-     WHERE r1.startcity = temp.sourceid AND r1.endcity = temp.targetid
- ORDER BY total_distance
- LIMIT 20)
-SELECT c1.name, c1.state, c2.name, c2.state
-FROM CityInfo c1, CityInfo c2, outertemp
-WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2;`, (err, data) => {
-        if (err) {
-            console.log(err);
-            res.json({});
-        } else {
-          res.json(data.rows);
-        }
-      });
+    `SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2
+    FROM CityInfo c1 JOIN Routes r1 on c1.id = r1.startcity JOIN CityInfo c2 on c2.id = r1.endcity
+    WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}';`, (err, data) => {
+       if (err) {
+           console.log(err);
+           res.json({});
+       } else {
+        console.log(data.rows)
+         res.json(data.rows);
+       }
+     });
   } else if (numInt == 1) {
     connection.query(
       `WITH outertemp AS
@@ -138,13 +128,14 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2;`, (err, data) => {
           AND r2.endcity NOT IN (r1.startcity, r2.startcity)
   ORDER BY total_distance
   LIMIT 20)
-SELECT c1.name, c1.state, c2.name, c2.state, c3.name, c3.state
+SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3
 FROM CityInfo c1, CityInfo c2, CityInfo c3, outertemp
 WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3;`, (err, data) => {
          if (err) {
              console.log(err);
              res.json({});
          } else {
+          console.log(data.rows)
            res.json(data.rows);
          }
        });
@@ -164,7 +155,7 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3;`, 
           AND r3.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity)
   ORDER BY total_distance
   LIMIT 20)
-SELECT c1.name, c1.state, c2.name, c2.state, c3.name, c3.state, c4.name, c4.state
+SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4
 FROM CityInfo c1, CityInfo c2, CityInfo c3, CityInfo c4, outertemp
 WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND c4.id = outertemp.c4;`, (err, data) => {
          if (err) {
@@ -192,13 +183,14 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND
           AND r4.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity, r4.startcity)
   ORDER BY total_distance
   LIMIT 20)
-SELECT c1.name, c1.state, c2.name, c2.state, c3.name, c3.state, c4.name, c4.state, c5.name, c5.state
+SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4, c5.name as city5, c5.state as state5
 FROM CityInfo c1, CityInfo c2, CityInfo c3, CityInfo c4, CityInfo c5, outertemp
 WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND c4.id = outertemp.c4 AND c5.id = outertemp.c5;`, (err, data) => {
          if (err) {
              console.log(err);
              res.json({});
          } else {
+            console.log(data.rows);
            res.json(data.rows);
          }
        });
