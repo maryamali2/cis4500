@@ -43,7 +43,7 @@ const city_distance = async function (req, res) {
   const businessId = req.query.businessId;
   connection.query(
     `SELECT (ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963) AS distance
-    FROM Attractions a JOIN Cities c ON a.cityid = c.id
+    FROM Attractions a JOIN CityInfo c ON a.cityid = c.id
      WHERE a.id = '${businessId}';`,
     [],
     (err, data) => {
@@ -105,8 +105,8 @@ const routes = async function (req, res) {
     connection.query(
      `SELECT src.name as sourceCity, src.state as sourceState, tgt.name as destinationCity, tgt.state as destinationState, r1.distance AS total_distance
      FROM routes r1
-        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cities) tgt ON r1.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM CityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM CityInfo) tgt ON r1.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' AND tgt.state ILIKE '%${endState}%' AND src.name <> tgt.name;`, (err, data) => {
         if (err) {
             console.log(err);
@@ -119,9 +119,9 @@ const routes = async function (req, res) {
     connection.query(
       `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity, int1.state as stopState, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance) AS total_distance
      FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
-        JOIN (SELECT id, name, state FROM cityInfo) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cityInfo) int1 ON r1.endCity = int1.id
-        JOIN (SELECT id, name, state FROM cityInfo) tgt ON r2.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM CityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM CityInfo) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM CityInfo) tgt ON r2.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' AND tgt.state ILIKE '%${endState}%' AND src.name <> int1.name 
      AND int1.name <> tgt.name AND src.name <> tgt.name LIMIT 10;`, (err, data) => {
          if (err) {
@@ -136,10 +136,10 @@ const routes = async function (req, res) {
       `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity, int1.state as stopState, int2.name as stopCity2, int2.state as stopState2, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance + r3.distance) AS total_distance
      FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
         JOIN routes r3 ON r2.endCity = r3.startCity
-        JOIN (SELECT id, name, state FROM cityInfo) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cityInfo) int1 ON r1.endCity = int1.id
-        JOIN (SELECT id, name, state FROM cityInfo) int2 ON r2.endCity = int2.id
-        JOIN (SELECT id, name, state FROM cityInfo) tgt ON r3.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM CityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM CityInfo) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM CityInfo) int2 ON r2.endCity = int2.id
+        JOIN (SELECT id, name, state FROM CityInfo) tgt ON r3.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' 
      AND tgt.state ILIKE '%${endState}%' AND src.name <> int1.name AND int1.name <> int2.name AND 
      int2.name <> tgt.name AND src.name <> int2.name AND src.name <> tgt.name AND int2.name <> tgt.name LIMIT 10;`, (err, data) => {
@@ -156,11 +156,11 @@ const routes = async function (req, res) {
      FROM routes r1 JOIN routes r2 ON r1.endcity = r2.startcity
         JOIN routes r3 ON r2.endcity = r3.startcity
         JOIN routes r4 ON r3.endcity = r4.startcity
-        JOIN (SELECT id, name, state FROM cityInfo) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cityInfo) int1 ON r1.endCity = int1.id
-        JOIN (SELECT id, name, state FROM cityInfo) int2 ON r2.endCity = int2.id
-        JOIN (SELECT id, name, state FROM cityInfo) int3 ON r3.endCity = int3.id
-        JOIN (SELECT id, name, state FROM cityInfo) tgt ON r4.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM CityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM CityInfo) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM CityInfo) int2 ON r2.endCity = int2.id
+        JOIN (SELECT id, name, state FROM CityInfo) int3 ON r3.endCity = int3.id
+        JOIN (SELECT id, name, state FROM CityInfo) tgt ON r4.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' AND tgt.state ILIKE '%${endState}%'
      AND src.name <> int1.name AND int1.name <> int2.name AND int2.name <> int3.name AND int3.name <> tgt.name AND 
      src.name <> int2.name AND src.name <> int3.name AND src.name <> tgt.name AND int1.name <> int3.name AND 
@@ -291,7 +291,7 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   connection.query(
     `WITH temp AS (
        SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
-       FROM Cities c
+       FROM CityInfo c
        LEFT JOIN Attractions a ON c.id = a.cityid
        WHERE c.id = ANY($1)
        GROUP BY c.id, c.name
