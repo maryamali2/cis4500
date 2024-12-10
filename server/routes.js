@@ -377,11 +377,15 @@ const backupAttractions = async function(req, res) {
   // Note: This route appears incomplete and references attractionIds, but doesn't use them.
   // We'll leave it as is.
   connection.query(
-    `WITH temp AS (SELECT state FROM CityInfo WHERE id = ${cityId})
-    SELECT *
-    FROM attractionsbackup a JOIN temp t ON a.state = t.state
-    ORDER BY rating DESC
-    LIMIT 10`,
+    `(SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories, a.city, a.state
+      FROM attractionsbackup a JOIN (SELECT state FROM CityInfo WHERE id = ${cityId}) t ON a.state = t.state
+      ORDER BY rating DESC
+      LIMIT 10)
+      UNION
+      (SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories, c.name, c.state
+       FROM attractions a JOIN CityInfo c ON a.cityid = c.id JOIN (SELECT state FROM CityInfo WHERE id = ${cityId}) t on c.state = t.state
+      ORDER BY rating DESC
+      LIMIT 10)`,
     [],
     (err, data) => {
       if (err) {
