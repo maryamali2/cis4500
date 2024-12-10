@@ -379,7 +379,7 @@ const backupAttractions = async function(req, res) {
   connection.query(
     `WITH temp AS (SELECT state FROM CityInfo WHERE id = ${cityId})
     SELECT *
-    FROM attractionsbackup a JOIN temp ON a.state = temp.state
+    FROM attractionsbackup a JOIN temp t ON a.state = t.state
     ORDER BY rating DESC
     LIMIT 10`,
     [],
