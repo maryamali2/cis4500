@@ -22,9 +22,9 @@ const testRoute = async function (req, res) {
 const city_info = async function (req, res) {
   const name = req.query.cityName;
   connection.query(
-    `SELECT c.id as cityid, c.city AS city, c.state_name AS state, c.lat AS latitude, c.lng AS longitude, c.population, c.density
-     FROM CitiesData c
-     WHERE c.city = '${name}';`,
+    `SELECT c.id as cityid, c.name AS city, c.state AS state, c.latitude, c.longitude, c.population, c.density
+     FROM CityInfo c
+     WHERE c.name = '${name}';`,
     (err, data) => {
       if (err) {
         console.error(err);
@@ -38,8 +38,7 @@ const city_info = async function (req, res) {
   );
 }
 
-// Other routes remain unchanged
-
+// Route 2: GET /cities/distance?businessId=SAsO6NFUiVPENX3nJA-KiQ
 const city_distance = async function (req, res) {
   const businessId = req.query.businessId;
   connection.query(
@@ -60,11 +59,13 @@ const city_distance = async function (req, res) {
   );
 }
 
+// Route 3: GET /attractions?cityId=11901&category1=Automotive&category2=...
 const route_attractions = async function (req, res) {
   const id = parseInt(req.query.cityId, 10);
   const category1 = req.query.category1 || '';
   const category2 = req.query.category2 || '';
   const category3 = req.query.category3 || '';
+
 
   connection.query(
   `WITH temp AS (
@@ -92,6 +93,7 @@ const route_attractions = async function (req, res) {
   });
 }
 
+// Route 4: GET /routes?numInt=1&startCity=Seattle&startState=Washington&endCity=Portland&endState=Oregon
 const routes = async function (req, res) {
   const numInt = parseInt(req.query.numInt,10);
   const startCity = req.query.startCity;
@@ -117,9 +119,9 @@ const routes = async function (req, res) {
     connection.query(
       `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity, int1.state as stopState, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance) AS total_distance
      FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
-        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
-        JOIN (SELECT id, name, state FROM cities) tgt ON r2.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM cityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cityInfo) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM cityInfo) tgt ON r2.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' AND tgt.state ILIKE '%${endState}%' AND src.name <> int1.name 
      AND int1.name <> tgt.name AND src.name <> tgt.name LIMIT 10;`, (err, data) => {
          if (err) {
@@ -134,10 +136,10 @@ const routes = async function (req, res) {
       `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity, int1.state as stopState, int2.name as stopCity2, int2.state as stopState2, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance + r3.distance) AS total_distance
      FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
         JOIN routes r3 ON r2.endCity = r3.startCity
-        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
-        JOIN (SELECT id, name, state FROM cities) int2 ON r2.endCity = int2.id
-        JOIN (SELECT id, name, state FROM cities) tgt ON r3.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM cityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cityInfo) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM cityInfo) int2 ON r2.endCity = int2.id
+        JOIN (SELECT id, name, state FROM cityInfo) tgt ON r3.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' 
      AND tgt.state ILIKE '%${endState}%' AND src.name <> int1.name AND int1.name <> int2.name AND 
      int2.name <> tgt.name AND src.name <> int2.name AND src.name <> tgt.name AND int2.name <> tgt.name LIMIT 10;`, (err, data) => {
@@ -154,11 +156,11 @@ const routes = async function (req, res) {
      FROM routes r1 JOIN routes r2 ON r1.endcity = r2.startcity
         JOIN routes r3 ON r2.endcity = r3.startcity
         JOIN routes r4 ON r3.endcity = r4.startcity
-        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
-        JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
-        JOIN (SELECT id, name, state FROM cities) int2 ON r2.endCity = int2.id
-        JOIN (SELECT id, name, state FROM cities) int3 ON r3.endCity = int3.id
-        JOIN (SELECT id, name, state FROM cities) tgt ON r4.endCity = tgt.id
+        JOIN (SELECT id, name, state FROM cityInfo) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cityInfo) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM cityInfo) int2 ON r2.endCity = int2.id
+        JOIN (SELECT id, name, state FROM cityInfo) int3 ON r3.endCity = int3.id
+        JOIN (SELECT id, name, state FROM cityInfo) tgt ON r4.endCity = tgt.id
      WHERE src.name ILIKE '%${startCity}%' AND src.state ILIKE '%${startState}%' AND tgt.name ILIKE '%${endCity}%' AND tgt.state ILIKE '%${endState}%'
      AND src.name <> int1.name AND int1.name <> int2.name AND int2.name <> int3.name AND int3.name <> tgt.name AND 
      src.name <> int2.name AND src.name <> int3.name AND src.name <> tgt.name AND int1.name <> int3.name AND 
@@ -175,6 +177,7 @@ const routes = async function (req, res) {
   }
 }
 
+// Route 5: GET /subcategories?cityId=11901
 const subcategories = async function (req, res) {
   const cityid = parseInt(req.query.cityId, 10);
   connection.query(
@@ -196,6 +199,7 @@ const subcategories = async function (req, res) {
   );
 }
 
+// Route 6: GET /numSubcategories?cityId=11901
 const numSubcategories = async function (req, res) {
   const cityid = parseInt(req.query.cityId, 10);
   connection.query(
@@ -218,17 +222,18 @@ const numSubcategories = async function (req, res) {
   );
 }
 
+// Route 7: GET /cityrecs?cityId=11901
 const cityRecs = async function(req, res) {
   const id = parseInt(req.query.cityId, 10);
   connection.query(
     `SELECT closeCity FROM (
        (SELECT endCity as closeCity, Routes.distance as distance
-        FROM Routes JOIN Cities ON Cities.id = Routes.startCity
-        WHERE Cities.id = ${id})
+        FROM Routes JOIN CityInfo ON CityInfo.id = Routes.startCity
+        WHERE CityInfo.id = ${id})
        UNION
        (SELECT startCity as closeCity, Routes.distance as distance
-        FROM Routes JOIN Cities ON Cities.id = Routes.endCity
-        WHERE Cities.id = ${id})
+        FROM Routes JOIN CityInfo ON CityInfo.id = Routes.endCity
+        WHERE CityInfo.id = ${id})
      ) as A
      ORDER BY distance
      LIMIT 10;`,
@@ -247,6 +252,7 @@ const cityRecs = async function(req, res) {
   );
 }
 
+// Route 8: GET /routesbyattractions
 const routesByAttractions = async function(req, res) {
   connection.query(
     `WITH B AS (
@@ -270,6 +276,7 @@ const routesByAttractions = async function(req, res) {
   );
 }
 
+// Route 9: GET /cityrankbyattractions?cityIds=11901,688,8485,...
 const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIds = req.query.cityIds; 
   if (!cityIds) {
@@ -303,7 +310,35 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   );
 }
 
+// Route 10: GET /randomAttraction?cityId=11901&attractionIds=mRMhGP6ePwdn0tF4Xyhl2A
 const randomAttraction = async function(req, res) {
+  // const cityId = req.query.cityId;
+  // const attractionIds = req.query.attractionIds; 
+  // const attractionIdsArray = attractionIds.split(',').map(id => id.toString()).filter(Boolean);
+  // if (attractionIdsArray.length === 0) {
+  //   return res.json([]);
+  // }
+
+  // connection.query(
+  //   `WITH temp as (
+  //     SELECT *
+  //     FROM attractions
+  //     WHERE id <> ANY($1)
+  //   )
+  //   SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
+  //   FROM temp t JOIN CityInfo c on t.cityid = c.id
+  //   WHERE c.id = ${cityId}
+  //   ORDER BY RANDOM()
+  //   LIMIT 1`,
+  //   [attractionIdsArray],
+  //   (err, data) => {
+  //     if (err) {
+  //       console.error(err);
+  //       return res.status(500).json({ error: 'Database error' });
+  //     }
+  //     res.json(data.rows[0]);
+  //   }
+  // );
   const cityId = req.query.cityId;
   const attractionIds = req.query.attractionIds; 
   if (!attractionIds) {
@@ -314,7 +349,7 @@ const randomAttraction = async function(req, res) {
     `WITH temp as (
       SELECT *
       FROM attractions
-      WHERE id NOT IN (${attractionIds})
+      WHERE id NOT IN ('${attractionIds}')
     )
     SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
     FROM temp t JOIN CityInfo c on t.cityid = c.id
@@ -332,14 +367,19 @@ const randomAttraction = async function(req, res) {
   );
 }
 
+// Route 10: GET /backupAttractions?cityId=11901
 const backupAttractions = async function(req, res) {
-  const cityId = req.params.cityId;
+  const cityId = parseInt(req.query.cityId,10);
+  if (!cityId) {
+    return res.status(400).json({ error: 'cityId query param required' });
+
+  }
   // Note: This route appears incomplete and references attractionIds, but doesn't use them.
   // We'll leave it as is.
   connection.query(
     `WITH temp AS (SELECT state FROM CityInfo WHERE id = ${cityId})
     SELECT *
-    FROM attractionsbackup a JOIN temp t ON a.state = t.state
+    FROM attractionsbackup a JOIN temp ON a.state = temp.state
     ORDER BY rating DESC
     LIMIT 10`,
     [],
