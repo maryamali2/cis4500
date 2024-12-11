@@ -68,27 +68,14 @@ const route_attractions = async function (req, res) {
 
 
   connection.query(
-  `WITH temp AS (
-    (SELECT a.name as attraction, a.address as address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories,
-            MIN((ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963)) as mindistance
-    FROM Attractions a JOIN Routes r on a.cityId = r.startcity JOIN CityInfo c ON c.id = r.endcity
-    WHERE a.categories LIKE '%${category1}%' AND a.cityId = ${id}
-    GROUP BY attraction, address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories)
-    UNION
-    (SELECT a.name as attraction, a.address as address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories,
-            MIN((ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963)) as mindistance
-    FROM Attractions a JOIN Routes r on a.cityId = r.startcity JOIN CityInfo c ON c.id = r.endcity
-    WHERE a.categories LIKE '%${category2}%' AND a.cityId = ${id}
-    GROUP BY attraction, address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories)
-    UNION
-    (SELECT a.name as attraction, a.address as address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories,
-            MIN((ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963)) as mindistance
-    FROM Attractions a JOIN Routes r on a.cityId = r.startcity JOIN CityInfo c ON c.id = r.endcity
-    WHERE a.categories LIKE '%${category3}%' AND a.cityId = ${id}
-    GROUP BY attraction, address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories))
-SELECT DISTINCT t.attraction, t.address, t.latitude, t.longitude, t.rating, t.categories, t.subcategories, t.mindistance
-FROM temp t
-ORDER BY t.rating desc, mindistance
+  `SELECT DISTINCT a.name as attraction, a.address as address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories,
+      MIN((ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963)) as mindistance,
+      MAX((ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963)) as maxdistance,
+      AVG((ACOS(SIN((c.latitude/(180/PI()))) * SIN((a.latitude/(180/PI()))) + COS((c.latitude/(180/PI()))) * COS((a.latitude/(180/PI())))*COS((a.longitude/(180/PI())) - (c.longitude/(180/PI())))) * 3963)) as avgdistance
+FROM Attractions a JOIN Routes r on a.cityId = r.startcity JOIN CityInfo c ON c.id = r.endcity
+WHERE (a.categories LIKE '%${category1}%' OR a.categories LIKE '%${category2}%' OR a.categories LIKE '%${category3}%') AND a.cityId = ${id}
+GROUP BY attraction, address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories
+ORDER BY a.rating desc
 LIMIT 10;`, (err, data) => {
     if (err) {
         console.log(err);
