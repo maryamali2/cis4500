@@ -194,10 +194,14 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND
 // Route 5: GET /subcategories?cityId=11901
 const subcategories = async function (req, res) {
   const cityid = parseInt(req.query.cityId, 10);
+  const category1 = req.query.category1 || '';
+  const category2 = req.query.category2 || '';
+  const category3 = req.query.category3 || '';
+
   connection.query(
-    `SELECT unnest(string_to_array(a.subcategories, ', ')) AS subcategory
+    `SELECT DISTINCT unnest(string_to_array(a.subcategories, ', ')) AS subcategory
      FROM attractions a
-     WHERE a.cityid = ${cityid};`,
+     WHERE (a.categories LIKE '%${category1}%' OR a.categories LIKE '%${category2}%' OR a.categories LIKE '%${category3}%') AND a.cityid = ${cityid};`,
     [],
     (err, data) => {
       if (err) {
