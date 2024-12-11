@@ -94,63 +94,49 @@ const routes = async function (req, res) {
   const endCity = req.query.endCity;
   const endState = req.query.endState;
 
+
   if (numInt == 0) {
     connection.query(
-    `SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, r1.distance as total_distance
-    FROM CityInfo c1 JOIN Routes r1 on c1.id = r1.startcity JOIN CityInfo c2 on c2.id = r1.endcity
-    WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}';`, (err, data) => {
-       if (err) {
-           console.log(err);
-           res.json({});
-       } else {
-        console.log(data.rows)
-         res.json(data.rows);
-       }
-     });
+     `SELECT src.name as sourceCity, src.state as sourceState, tgt.name destinationCity, tgt.state as destinationState, r1.distance AS total_distance
+     FROM routes r1
+        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cities) tgt ON r1.endCity = tgt.id
+     WHERE src.name LIKE '%${startCity}%' AND src.state LIKE '%${startState}%' AND tgt.name LIKE '%${endCity}%' AND tgt.state LIKE '%${endState}%' AND src.name <> tgt.name;`, (err, data) => {
+        if (err) {
+            console.log(err);
+            res.json({});
+        } else {
+          res.json(data.rows);
+        }
+      });
   } else if (numInt == 1) {
     connection.query(
-      `WITH outertemp AS
-      (WITH temp as (
-          SELECT c1.id as sourceid, c2.id as targetid
-          FROM CityInfo c1, CityInfo c2
-          WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}'
-          )
-      SELECT r1.startcity as c1, r2.startcity as c2, r2.endcity as c3, (r1.distance + r2.distance) AS total_distance
-      FROM Routes r1 JOIN Routes r2 ON r1.endcity = r2.startcity, temp
-      WHERE r1.startcity = temp.sourceid AND r2.endcity = temp.targetid
-          AND r2.endcity NOT IN (r1.startcity, r2.startcity)
-  ORDER BY total_distance
-  LIMIT 20)
-SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, outertemp.total_distance
-FROM CityInfo c1, CityInfo c2, CityInfo c3, outertemp
-WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3;`, (err, data) => {
+      `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity, int1.state as stopState, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance) AS total_distance
+     FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
+        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM cities) tgt ON r2.endCity = tgt.id
+     WHERE src.name LIKE '%${startCity}%' AND src.state LIKE '%${startState}%' AND tgt.name LIKE '%${endCity}%' AND tgt.state LIKE '%${endState}%' AND src.name <> int1.name 
+     AND int1.name <> tgt.name AND src.name <> tgt.name LIMIT 10;`, (err, data) => {
          if (err) {
              console.log(err);
              res.json({});
          } else {
-          console.log(data.rows)
            res.json(data.rows);
          }
        });
   } else if (numInt == 2) {
     connection.query(
-      `WITH outertemp AS
-      (WITH temp as (
-          SELECT c1.id as sourceid, c2.id as targetid
-          FROM CityInfo c1, CityInfo c2
-          WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}'
-          )
-      SELECT r1.startcity as c1, r2.startcity as c2, r3.startcity as c3, r3.endcity as c4, (r1.distance + r2.distance + r3.distance) AS total_distance
-      FROM (SELECT * FROM routes WHERE distance >= 150) r1 JOIN (SELECT * FROM routes WHERE distance >= 150) r2 ON r1.endcity = r2.startcity
-          JOIN (SELECT * FROM routes WHERE distance >= 150) r3 ON r2.endcity = r3.startcity, temp
-      WHERE r1.startcity = temp.sourceid AND r3.endcity = temp.targetid
-          AND r2.endcity NOT IN (r1.startcity, r2.startcity)
-          AND r3.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity)
-  ORDER BY total_distance
-  LIMIT 20)
-SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4, outertemp.total_distance
-FROM CityInfo c1, CityInfo c2, CityInfo c3, CityInfo c4, outertemp
-WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND c4.id = outertemp.c4;`, (err, data) => {
+      `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity1, int1.state as stopState1, int2.name as stopCity2, int2.state as stopState2, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance + r3.distance) AS total_distance
+     FROM routes r1 JOIN routes r2 ON r1.endCity = r2.startCity
+        JOIN routes r3 ON r2.endCity = r3.startCity
+        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM cities) int2 ON r2.endCity = int2.id
+        JOIN (SELECT id, name, state FROM cities) tgt ON r3.endCity = tgt.id
+     WHERE src.name LIKE '%${startCity}%' AND src.state LIKE '%${startState}%' AND tgt.name LIKE '%${endCity}%' 
+     AND tgt.state LIKE '%${endState}%' AND src.name <> int1.name AND int1.name <> int2.name AND 
+     int2.name <> tgt.name AND src.name <> int2.name AND src.name <> tgt.name AND int2.name <> tgt.name LIMIT 10;`, (err, data) => {
          if (err) {
              console.log(err);
              res.json({});
@@ -160,30 +146,23 @@ WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND
        });
   } else if (numInt == 3) {
     connection.query(
-      `WITH outertemp AS
-      (WITH temp as (
-          SELECT c1.id as sourceid, c2.id as targetid
-          FROM CityInfo c1, CityInfo c2
-          WHERE c1.name = '${startCity}' and c1.state = '${startState}' and c2.name = '${endCity}' and c2.state = '${endState}'
-          )
-      SELECT r1.startcity as c1, r2.startcity as c2, r3.startcity as c3, r4.startcity as c4, r4.endcity as c5, (r1.distance + r2.distance + r3.distance + r4.distance) AS total_distance
-      FROM (SELECT * FROM routes WHERE distance >= 250) r1 JOIN (SELECT * FROM routes WHERE distance >= 250) r2 ON r1.endcity = r2.startcity
-          JOIN (SELECT * FROM routes WHERE distance >= 250) r3 ON r2.endcity = r3.startcity
-          JOIN (SELECT * FROM routes WHERE distance >= 250) r4 ON r3.endcity = r4.startcity, temp
-      WHERE r1.startcity = temp.sourceid AND r4.endcity = temp.targetid
-          AND r2.endcity NOT IN (r1.startcity, r2.startcity)
-          AND r3.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity)
-          AND r4.endcity NOT IN (r1.startcity, r2.startcity, r3.startcity, r4.startcity)
-  ORDER BY total_distance
-  LIMIT 20)
-SELECT c1.name as city1, c1.state as state1, c2.name as city2, c2.state as state2, c3.name as city3, c3.state as state3, c4.name as city4, c4.state as state4, c5.name as city5, c5.state as state5, outertemp.total_distance
-FROM CityInfo c1, CityInfo c2, CityInfo c3, CityInfo c4, CityInfo c5, outertemp
-WHERE c1.id = outertemp.c1 AND c2.id = outertemp.c2 AND c3.id = outertemp.c3 AND c4.id = outertemp.c4 AND c5.id = outertemp.c5;`, (err, data) => {
+      `SELECT src.name as sourceCity, src.state as sourceState, int1.name as stopCity1, int1.state as stopState1, int2.name as stopCity2, int2.state as stopState2, int3.name as stopCity3, int3.state as stopState3, tgt.name as destinationCity, tgt.state as destinationState, (r1.distance + r2.distance + r3.distance + r4.distance) AS total_distance
+     FROM routes r1 JOIN routes r2 ON r1.endcity = r2.startcity
+        JOIN routes r3 ON r2.endcity = r3.startcity
+        JOIN routes r4 ON r3.endcity = r4.startcity
+        JOIN (SELECT id, name, state FROM cities) src ON r1.startCity = src.id
+        JOIN (SELECT id, name, state FROM cities) int1 ON r1.endCity = int1.id
+        JOIN (SELECT id, name, state FROM cities) int2 ON r2.endCity = int2.id
+        JOIN (SELECT id, name, state FROM cities) int3 ON r3.endCity = int3.id
+        JOIN (SELECT id, name, state FROM cities) tgt ON r4.endCity = tgt.id
+     WHERE src.name LIKE '%${startCity}%' AND src.state LIKE '%${startState}%' AND tgt.name LIKE '%${endCity}%' AND tgt.state LIKE '%${endState}%'
+     AND src.name <> int1.name AND int1.name <> int2.name AND int2.name <> int3.name AND int3.name <> tgt.name AND 
+     src.name <> int2.name AND src.name <> int3.name AND src.name <> tgt.name AND int1.name <> int3.name AND 
+     int1.name <> tgt.name AND int2.name <> tgt.name LIMIT 10;`, (err, data) => {
          if (err) {
              console.log(err);
              res.json({});
          } else {
-            console.log(data.rows);
            res.json(data.rows);
          }
        });
@@ -327,35 +306,33 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
 
 // Route 10: GET /randomAttraction?cityId=11901&attractionIds=mRMhGP6ePwdn0tF4Xyhl2A
 const randomAttraction = async function(req, res) {
-  // const cityId = req.query.cityId;
-  // const attractionIds = req.query.attractionIds; 
-  // const attractionIdsArray = attractionIds.split(',').map(id => id.toString()).filter(Boolean);
-  // if (attractionIdsArray.length === 0) {
-  //   return res.json([]);
-  // }
-
-  // connection.query(
-  //   `WITH temp as (
-  //     SELECT *
-  //     FROM attractions
-  //     WHERE id <> ANY($1)
-  //   )
-  //   SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
-  //   FROM temp t JOIN CityInfo c on t.cityid = c.id
-  //   WHERE c.id = ${cityId}
-  //   ORDER BY RANDOM()
-  //   LIMIT 1`,
-  //   [attractionIdsArray],
-  //   (err, data) => {
-  //     if (err) {
-  //       console.error(err);
-  //       return res.status(500).json({ error: 'Database error' });
-  //     }
-  //     res.json(data.rows[0]);
-  //   }
-  // );
   const cityId = req.query.cityId;
   const attractionIds = req.query.attractionIds; 
+  const attractionIdsArray = attractionIds.split(',').map(id => id.toString()).filter(Boolean);
+  if (attractionIdsArray.length === 0) {
+    return res.json([]);
+  }
+
+  connection.query(
+    `WITH temp as (
+      SELECT *
+      FROM attractions
+      WHERE id <> ANY($1)
+    )
+    SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
+    FROM temp t JOIN CityInfo c on t.cityid = c.id
+    WHERE c.id = ${cityId}
+    ORDER BY RANDOM()
+    LIMIT 1`,
+    [attractionIdsArray],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(data.rows[0]);
+    }
+  );
   if (!attractionIds) {
     return res.status(400).json({ error: 'attractionids query param required' });
   }
