@@ -433,6 +433,28 @@ const cityNumRoutesAndAvgDist = async function(req, res) {
   );
 }
 
+// Route 12: GET /subattractions?cityId=19511&subcategory1=Food&subcategory2=...
+const route_subattractions = async function (req, res) {
+  const id = parseInt(req.query.cityId, 10);
+  const subcategory1 = req.query.subcategory1;
+  const subcategory2 = req.query.category2;
+  const subcategory3 = req.query.category3;
+
+  connection.query(
+  `SELECT DISTINCT a.name as attraction, a.address as address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories
+  FROM Attractions a
+  WHERE (a.subcategories LIKE '%${subcategory1}%' OR a.subcategories LIKE '%${subcategory2}%' OR a.subcategories LIKE '%${subcategory3}%') AND a.cityId = ${id}
+  ORDER BY a.rating desc
+  LIMIT 10;`, (err, data) => {
+    if (err) {
+        console.log(err);
+        res.json({});
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
 module.exports = {
   city_info,
   city_distance,
@@ -446,5 +468,6 @@ module.exports = {
   testRoute,
   backupAttractions,
   randomAttraction,
-  cityNumRoutesAndAvgDist
+  cityNumRoutesAndAvgDist,
+  route_subattractions
 };
