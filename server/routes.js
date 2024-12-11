@@ -18,13 +18,14 @@ const testRoute = async function (req, res) {
   res.json("HELLO");
 }
 
-// Route 1: GET /cities?cityName=Atlanta
+// Route 1: GET /cities?cityName=Atlanta&cityState=Georgia
 const city_info = async function (req, res) {
-  const name = req.query.cityName;
+  const city = req.query.cityName;
+  const state = req.query.stateName;
   connection.query(
     `SELECT c.id as cityid, c.name AS city, c.state AS state, c.latitude, c.longitude, c.population, c.density
      FROM CityInfo c
-     WHERE c.name = '${name}';`,
+     WHERE c.name = '${city}' and c.state = '${state}';`,
     (err, data) => {
       if (err) {
         console.error(err);
