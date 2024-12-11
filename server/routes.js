@@ -437,8 +437,8 @@ const cityNumRoutesAndAvgDist = async function(req, res) {
 const route_subattractions = async function (req, res) {
   const id = parseInt(req.query.cityId, 10);
   const subcategory1 = req.query.subcategory1;
-  const subcategory2 = req.query.category2;
-  const subcategory3 = req.query.category3;
+  const subcategory2 = req.query.subcategory2;
+  const subcategory3 = req.query.subcategory3;
 
   connection.query(
   `SELECT DISTINCT a.name as attraction, a.address as address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories
@@ -472,4 +472,3 @@ module.exports = {
   route_subattractions
 };
 
-// test comment
