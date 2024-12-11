@@ -18,7 +18,7 @@ const testRoute = async function (req, res) {
   res.json("HELLO");
 }
 
-// Route 1: GET /cities?cityName=Atlanta&cityState=Georgia
+// Route 1: GET /cities?cityName=Atlanta&stateName=Georgia
 const city_info = async function (req, res) {
   const city = req.query.cityName;
   const state = req.query.stateName;
