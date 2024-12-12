@@ -1,0 +1,52 @@
+CREATE TABLE citiesData (
+    city VARCHAR(100),
+    city_ascii VARCHAR(100),
+    state_id VARCHAR(2),
+    state_name VARCHAR(100),
+    county_fips INT,
+    county_name VARCHAR(100),
+    lat DECIMAL(100, 10),
+    lng DECIMAL(100, 10),
+    population INT,
+    density INT
+);
+
+SELECT ROW_NUMBER() over (ORDER BY city) as id, city as name, state_name as state, lat as latitude, lng as longitude, population, density
+INTO cityInfo
+FROM citiesData WHERE state_id <> 'HI' AND state_id <> 'AK'
+ORDER BY citiesData.population DESC
+LIMIT 2500;
+
+ALTER TABLE cityInfo
+ADD PRIMARY KEY(id);
+
+ALTER TABLE Routes
+ADD PRIMARY KEY(startcity, endCity);
+
+SELECT cities.id as startCity, A.id as endCity, (ACOS(SIN((cities.latitude/(180/PI()))) * SIN((A.latitude/(180/PI()))) + COS((cities.latitude/(180/PI()))) * COS((A.latitude/(180/PI())))*COS((A.longitude/(180/PI())) - (cities.longitude/(180/PI())))) * 3963)  as distance
+    INTO allRoutes
+FROM cities CROSS JOIN (
+    SELECT * FROM cities
+) A
+WHERE cities.name <> A.name AND (ACOS(SIN((cities.latitude/(180/PI()))) * SIN((A.latitude/(180/PI()))) + COS((cities.latitude/(180/PI()))) * COS((A.latitude/(180/PI())))*COS((A.longitude/(180/PI())) - (cities.longitude/(180/PI())))) * 3963)  < 600;
+
+SELECT cityInfo.id as startCity, A.id as endCity, (ACOS(SIN((cityInfo.latitude/(180/PI()))) * SIN((A.latitude/(180/PI()))) + COS((cityInfo.latitude/(180/PI()))) * COS((A.latitude/(180/PI())))*COS((A.longitude/(180/PI())) - (cityInfo.longitude/(180/PI())))) * 3963)  as distance
+    INTO routes
+FROM cityInfo CROSS JOIN (
+    SELECT * FROM cityInfo
+) A
+WHERE cityInfo.name <> A.name AND (ACOS(SIN((cityInfo.latitude/(180/PI()))) * SIN((A.latitude/(180/PI()))) + COS((cityInfo.latitude/(180/PI()))) * COS((A.latitude/(180/PI())))*COS((A.longitude/(180/PI())) - (cityInfo.longitude/(180/PI())))) * 3963)  < 300;
+
+CREATE TABLE Attractions (
+id VARCHAR(200),
+name VARCHAR(100),
+cityid INT,
+address VARCHAR(200),
+latitude DECIMAL(100, 10),
+longitude DECIMAL(100, 10),
+rating DECIMAL(100, 10),
+categories VARCHAR(100),
+subcategories VARCHAR(100),
+FOREIGN KEY (cityid) REFERENCES Cities(id),
+PRIMARY KEY (id)
+);
