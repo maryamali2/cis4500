@@ -4,7 +4,7 @@
 travel. is an application that allows users to find city and route specific information, such as finding possible routes from a city to another (with stops in between), attractions in a certain city, recommendations, etc. 
 
 ### Directories
-We have a couple of directories in our project. Our backend code is located in the server folder and our frontend code is located in the client folder. The SQL queries used for cleaning and creating the CityInfo and Routes tables is located in cleaningData.txt (in the server folder). The DDL for Attractions also located in cleaningData.txt, but the code used for creating the Attractions and AttractionsBackup tables are in ... 
+We have a couple of directories in our project. Our backend code is located in the server folder and our frontend code is located in the client folder. The SQL queries used for cleaning and creating the CityInfo and Routes tables is located in cleaningData.txt (in the dataCleaning folder of the server folder). The DDL for Attractions also located in cleaningData.txt, but the code used for creating the Attractions and AttractionsBackup tables are in the yelp folder which is also located in the dataCleaning folder.
 
 ### How To Run
 In order to run the backend, after entering the server folder, npm start can be performed. The backend will be located on http://localhost:8080. 
