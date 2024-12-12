@@ -9,3 +9,6 @@ We have a couple of directories in our project. Our backend code is located in t
 ### How To Run
 In order to run the backend, after entering the server folder, npm start can be performed. The backend will be located on http://localhost:8080. 
 For the frontend itself, routes.html can be run through VSCode's run feature. For our project in its entirety, we have deployed our application using Vercel, which our full project can be found at ...
+
+### Dependencies
+The only dependencies required are nodemon and npm for the backend.
