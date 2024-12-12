@@ -37,6 +37,8 @@ FROM cityInfo CROSS JOIN (
 ) A
 WHERE cityInfo.name <> A.name AND (ACOS(SIN((cityInfo.latitude/(180/PI()))) * SIN((A.latitude/(180/PI()))) + COS((cityInfo.latitude/(180/PI()))) * COS((A.latitude/(180/PI())))*COS((A.longitude/(180/PI())) - (cityInfo.longitude/(180/PI())))) * 3963)  < 300;
 
+CREATE INDEX cityIndex ON Routes(startCity, endCity);
+
 CREATE TABLE Attractions (
 id VARCHAR(200),
 name VARCHAR(100),
