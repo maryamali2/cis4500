@@ -217,8 +217,8 @@ const subcategories = async function (req, res) {
   );
 }
 
-// Route 6: GET /numSubcategories?cityIds=11901,19511
-const numSubcategories = async function (req, res) {
+// Route 6: GET /topCityCategories?cityIds=11901,19511
+const topCityCategories = async function (req, res) {
   const cityIds = req.query.cityIds;
   connection.query(
     `SELECT c.name as city, category, COUNT(*) AS attractioncount
@@ -473,7 +473,7 @@ module.exports = {
   route_attractions,
   routes, 
   subcategories,
-  numSubcategories,
+  topCityCategories,
   cityRecs,
   routesByAttractions, 
   rankCitiesByUniqueAttractions,

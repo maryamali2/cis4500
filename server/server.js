@@ -15,7 +15,7 @@ app.get('/cities/distance', routes.city_distance);
 app.get('/attractions', routes.route_attractions); 
 app.get('/routes', routes.routes); 
 app.get('/subcategories', routes.subcategories); 
-app.get('/numSubcategories', routes.numSubcategories); 
+app.get('/topCityCategories', routes.topCityCategories); 
 app.get('/cityrecs', routes.cityRecs); 
 app.get('/routesbyattractions', routes.routesByAttractions); 
 app.get('/cityrankbyattractions', routes.rankCitiesByUniqueAttractions); 
