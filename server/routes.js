@@ -217,18 +217,19 @@ const subcategories = async function (req, res) {
   );
 }
 
-// Route 6: GET /numSubcategories?cityId=11901
+// Route 6: GET /numSubcategories?cityIds=11901,19511
 const numSubcategories = async function (req, res) {
-  const cityid = parseInt(req.query.cityId, 10);
+  const cityIds = req.query.cityIds;
   connection.query(
-    `SELECT category, COUNT(*) AS attractioncount
-     FROM (
-       SELECT unnest(string_to_array(a.categories, ', ')) AS category
-       FROM attractions a
-       WHERE a.cityid = ${cityid}
-     ) AS split_categories
-     GROUP BY category
-     ORDER BY attractioncount DESC;`,
+    `SELECT c.name as city, category, COUNT(*) AS attractioncount
+    FROM (
+      SELECT a.cityid, unnest(string_to_array(a.categories, ', ')) AS category
+      FROM attractions a JOIN CityInfo c ON a.cityid = c.id
+      WHERE a.cityid IN (${cityIds})
+    ) AS split_categories JOIN CityInfo c on split_categories.cityid = c.id
+GROUP BY c.name, category
+ORDER BY attractioncount DESC
+LIMIT 3;`,
     [],
     (err, data) => {
       if (err) {
@@ -294,7 +295,7 @@ const routesByAttractions = async function(req, res) {
   );
 }
 
-// Route 9: GET /cityrankbyattractions?cityIds=19511,17705,25090,...
+// Route 9: GET /cityrankbyattractions?cityIds=11901,688,8485,...
 const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIds = req.query.cityIds; 
   if (!cityIds) {
@@ -304,7 +305,8 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIdsArray = cityIds.split(',').map(id => parseInt(id, 10)).filter(Boolean);
   if (cityIdsArray.length === 0) {
     return res.json([]);
-  } 
+  }
+
   connection.query(
     `WITH temp AS (
        SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
@@ -313,18 +315,16 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
        WHERE c.id = ANY($1)
        GROUP BY c.id, c.name
        ORDER BY NumAttractions DESC
-       LIMIT 3
-     ), temp1 AS (SELECT * FROM TEMP LIMIT 1), temp2 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 1), temp3 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 2)
-      SELECT temp1.cityName AS city1, temp2.cityName AS city2, temp3.cityName AS city3, r1.distance + r2.distance AS distance, temp1.NumAttractions + temp2.NumAttractions + temp3.NumAttractions AS totalNumberOfAttractions
-    FROM Routes r1 JOIN temp1 ON r1.startcity = temp1.CityID JOIN temp2 ON r1.endcity = temp2.CityID JOIN Routes r2 ON r1.endcity = r2.startcity JOIN temp3 ON r2.endcity = temp3.CityID;
-    `,
+     )
+     SELECT temp.CityName
+     FROM temp;`,
     [cityIdsArray],
     (err, data) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.json(data.rows);
+      res.json(data.rows.map(row => row.cityname));
     }
   );
 }
@@ -338,29 +338,29 @@ const randomAttraction = async function(req, res) {
   //   return res.json([]);
   // }
 
-  // connection.query(
-  //   `WITH temp as (
-  //     SELECT *
-  //     FROM attractions
-  //     WHERE id <> ANY($1)
-  //   )
-  //   SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
-  //   FROM temp t JOIN CityInfo c on t.cityid = c.id
-  //   WHERE c.id = ${cityId}
-  //   ORDER BY RANDOM()
-  //   LIMIT 1`,
-  //   [attractionIdsArray],
-  //   (err, data) => {
-  //     if (err) {
-  //       console.error(err);
-  //       return res.status(500).json({ error: 'Database error' });
-  //     }
-  //     res.json(data.rows[0]);
-  //   }
-  // );
-  // if (!attractionIds) {
-  //   return res.status(400).json({ error: 'attractionids query param required' });
-  // }
+  connection.query(
+    `WITH temp as (
+      SELECT *
+      FROM attractions
+      WHERE id <> ANY($1)
+    )
+    SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
+    FROM temp t JOIN CityInfo c on t.cityid = c.id
+    WHERE c.id = ${cityId}
+    ORDER BY RANDOM()
+    LIMIT 1`,
+    [attractionIdsArray],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(data.rows[0]);
+    }
+  );
+  if (!attractionIds) {
+    return res.status(400).json({ error: 'attractionids query param required' });
+  }
 
   // WITH temp as (
   //   SELECT *
