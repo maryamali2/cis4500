@@ -221,15 +221,24 @@ const subcategories = async function (req, res) {
 const topCityCategories = async function (req, res) {
   const cityIds = req.query.cityIds;
   connection.query(
-    `SELECT c.name as city, category, COUNT(*) AS attractioncount
-    FROM (
-      SELECT a.cityid, unnest(string_to_array(a.categories, ', ')) AS category
-      FROM attractions a JOIN CityInfo c ON a.cityid = c.id
-      WHERE a.cityid IN (${cityIds})
-    ) AS split_categories JOIN CityInfo c on split_categories.cityid = c.id
-GROUP BY c.name, category
-ORDER BY attractioncount DESC
-LIMIT 3;`,
+    `WITH split_categories AS (
+        SELECT a.cityid, c.name, unnest(string_to_array(a.categories, ', ')) AS category
+        FROM attractions a JOIN CityInfo c ON a.cityid = c.id
+        WHERE a.cityid IN (${cityIds})
+      ),
+      random_attractions AS (
+        SELECT DISTINCT ON (cityid, category) name, cityid, address, rating, category
+        FROM (SELECT id, name, cityid, address, rating, unnest(string_to_array(categories, ', ')) AS category
+          FROM attractions) ua
+          WHERE ua.cityid IN (${cityIds})
+          ORDER BY cityid, category, RANDOM()
+      )
+      SELECT c.name as city, sc.category, COUNT(*) AS attractioncount, ra.name, ra.cityid, ra.address, ra.rating
+      FROM split_categories sc JOIN CityInfo c on sc.cityid = c.id, random_attractions ra
+      WHERE sc.cityid = ra.cityid AND sc.category = ra.category
+      GROUP BY c.name, sc.category, ra.name, ra.cityid, ra.address, ra.rating
+      ORDER BY attractioncount DESC
+      LIMIT 3;`,
     [],
     (err, data) => {
       if (err) {
