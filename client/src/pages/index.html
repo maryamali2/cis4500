@@ -90,43 +90,97 @@
             <label for="source-city">Source City:</label>
             <input type="text" id="source-city" name="source-city" required>
 
+            <label for="source-state">Source State:</label>
+            <input type="text" id="source-state" name="source-state" required>
+
             <label for="destination-city">Destination City:</label>
             <input type="text" id="destination-city" name="destination-city" required>
+
+            <label for="destination-state">Destination State:</label>
+            <input type="text" id="destination-state" name="destination-state" required>
 
             <label for="max-cities">Max Cities In Between (1-3):</label>
             <input type="number" id="max-cities" name="max-cities" min="1" max="3" required>
             <div id="max-cities-error" class="error-message"></div>
 
             <button type="submit" class="minimal-button">Search Routes</button>
+            <div id="city-error" class="error-message"></div>
         </form>
     </div>
 
     <script>
-        // JavaScript code for index.html
-        document.getElementById('search-form').addEventListener('submit', function(event) {
+        // This page calls the /cities route to validate the existence of the source and destination cities.
+        // Specifically:
+        // 1. /cities?cityName=...&stateName=... for the source city/state
+        // 2. /cities?cityName=...&stateName=... for the destination city/state
+
+        // Function to capitalize inputs (first letter uppercase, rest lowercase)
+        function capitalizeInput(str) {
+            if (!str) return str;
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        }
+
+        document.getElementById('search-form').addEventListener('submit', async function(event) {
             event.preventDefault();
-            const sourceCity = document.getElementById('source-city').value;
-            const destinationCity = document.getElementById('destination-city').value;
+            const cityError = document.getElementById('city-error');
+            const maxCitiesError = document.getElementById('max-cities-error');
+
+            let sourceCity = document.getElementById('source-city').value.trim();
+            let sourceState = document.getElementById('source-state').value.trim();
+            let destinationCity = document.getElementById('destination-city').value.trim();
+            let destinationState = document.getElementById('destination-state').value.trim();
             const maxCities = parseInt(document.getElementById('max-cities').value);
 
-            const maxCitiesError = document.getElementById('max-cities-error');
+            cityError.textContent = '';
+            maxCitiesError.textContent = '';
+
+            // Case correction
+            sourceCity = capitalizeInput(sourceCity);
+            sourceState = capitalizeInput(sourceState);
+            destinationCity = capitalizeInput(destinationCity);
+            destinationState = capitalizeInput(destinationState);
+
+            // Update the input fields with corrected values (optional)
+            document.getElementById('source-city').value = sourceCity;
+            document.getElementById('source-state').value = sourceState;
+            document.getElementById('destination-city').value = destinationCity;
+            document.getElementById('destination-state').value = destinationState;
 
             if (maxCities > 3) {
                 maxCitiesError.textContent = 'You cannot have more than 3 intermediate cities.';
                 return;
-            } else {
-                maxCitiesError.textContent = '';
             }
 
+            // Calls /cities route to validate the source city/state
+            // GET /cities?cityName=<sourceCity>&stateName=<sourceState>
+            const sourceRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(sourceCity)}&stateName=${encodeURIComponent(sourceState)}`);
+            const sourceData = await sourceRes.json();
+
+            if (!sourceData || !sourceData.cityid) {
+                cityError.textContent = `Invalid source city/state. Please enter a valid city, state pair.`;
+                return;
+            }
+
+            // Calls /cities route again to validate the destination city/state
+            // GET /cities?cityName=<destinationCity>&stateName=<destinationState>
+            const destRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(destinationCity)}&stateName=${encodeURIComponent(destinationState)}`);
+            const destData = await destRes.json();
+
+            if (!destData || !destData.cityid) {
+                cityError.textContent = `Invalid destination city/state. Please enter a valid city, state pair.`;
+                return;
+            }
+
+            // Both cities are valid, save form data and go to routes page
             const formData = {
                 sourceCity,
+                sourceState,
                 destinationCity,
+                destinationState,
                 maxCities
             };
-
             localStorage.setItem('formData', JSON.stringify(formData));
-            // Redirect to routes page
-            window.location.href = 'routes.html';
+            window.location.href = 'routes.html'; // Will use the /routes route in routes.html
         });
 
         // Load saved form data
@@ -134,9 +188,11 @@
             const savedFormData = localStorage.getItem('formData');
             if (savedFormData) {
                 const formData = JSON.parse(savedFormData);
-                document.getElementById('source-city').value = formData.sourceCity;
-                document.getElementById('destination-city').value = formData.destinationCity;
-                document.getElementById('max-cities').value = formData.maxCities;
+                document.getElementById('source-city').value = formData.sourceCity || '';
+                document.getElementById('source-state').value = formData.sourceState || '';
+                document.getElementById('destination-city').value = formData.destinationCity || '';
+                document.getElementById('destination-state').value = formData.destinationState || '';
+                document.getElementById('max-cities').value = formData.maxCities || '';
             }
         };
     </script>
