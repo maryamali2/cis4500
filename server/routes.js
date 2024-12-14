@@ -331,15 +331,16 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
 
   connection.query(
     `WITH temp AS (
-       SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
-       FROM CityInfo c
-       LEFT JOIN Attractions a ON c.id = a.cityid
-       WHERE c.id = ANY($1)
-       GROUP BY c.id, c.name
-       ORDER BY NumAttractions DESC
-     )
-     SELECT temp.CityName
-     FROM temp;`,
+      SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
+      FROM CityInfo c
+      LEFT JOIN Attractions a ON c.id = a.cityid
+      WHERE c.id = ANY($!1)
+      GROUP BY c.id, c.name
+      ORDER BY NumAttractions DESC
+      LIMIT 3
+    ), temp1 AS (SELECT * FROM TEMP LIMIT 1), temp2 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 1), temp3 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 2)
+SELECT r1.startcity AS city1, r1.endcity AS city2, r2.endcity AS city3, r1.distance + r2.distance AS distance, temp1.NumAttractions + temp2.NumAttractions + temp3.NumAttractions AS totalNumberOfAttractions
+FROM Routes r1 JOIN temp1 ON r1.startcity = temp1.CityID JOIN temp2 ON r1.endcity = temp2.CityID JOIN Routes r2 ON r1.endcity = r2.startcity JOIN temp3 ON r2.endcity = temp3.CityID;`,
     [cityIdsArray],
     (err, data) => {
       if (err) {
