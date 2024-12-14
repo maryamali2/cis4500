@@ -258,7 +258,7 @@
 
     <ul id="routes-list" class="routes-list"></ul>
 
-    <!-- Route modal shows route details and city rank by unique attractions -->
+    <!-- Route Modal -->
     <div id="route-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeRouteModal()">&times;</span>
@@ -269,10 +269,14 @@
                 <h3>City Rank by Unique Attractions</h3>
                 <p id="route-city-rank"></p>
             </div>
+            <div class="info-section">
+                <h3>Top City Categories (Entire Route)</h3>
+                <ul id="route-top-categories-list"></ul>
+            </div>
         </div>
     </div>
 
-    <!-- City modal shows city details, top categories, city stats, random attraction -->
+    <!-- City Modal -->
     <div id="city-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeCityModal()">&times;</span>
@@ -294,12 +298,7 @@
             <ul id="attractions-list"></ul>
 
             <div class="info-section">
-                <h3>Top City Categories</h3>
-                <ul id="top-categories-list"></ul>
-            </div>
-
-            <div class="info-section">
-                <h3>Neighboring City Recommendations (IDs)</h3>
+                <h3>Neighboring City Recommendations</h3>
                 <p id="city-recs-info"></p>
             </div>
 
@@ -404,7 +403,6 @@
 
         document.getElementById('sort-by').value = filters.sortBy;
 
-        // Calls /routes
         async function fetchRoutesData(numInt, startCity, startState, endCity, endState) {
             const url = `http://localhost:8080/routes?numInt=${numInt}&startCity=${encodeURIComponent(startCity)}&startState=${encodeURIComponent(startState)}&endCity=${encodeURIComponent(endCity)}&endState=${encodeURIComponent(endState)}`;
             const res = await fetch(url);
@@ -451,7 +449,6 @@
         }
 
         async function loadRouteCityIds(route) {
-            // Calls /cities for each city
             const cityIds = [];
             for (const cityObj of route.cities) {
                 const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityObj.city)}&stateName=${encodeURIComponent(cityObj.state)}`);
@@ -463,7 +460,8 @@
             return cityIds;
         }
 
-        // Calls /cityrankbyattractions
+        // rankCitiesByUniqueAttractions output:
+        // [{"city1":"Philadelphia","city2":"Trenton","city3":"New York","distance":79.4770,"totalnumberofattractions":14154}]
         async function showRouteCityRank(route) {
             const rankElement = document.getElementById('route-city-rank');
             rankElement.textContent = '';
@@ -478,7 +476,38 @@
             if (!rankData || rankData.length === 0) {
                 rankElement.textContent = 'No city ranking available.';
             } else {
-                rankElement.textContent = `Cities ranked by unique attractions: ${rankData.join(' > ')}`;
+                const info = rankData[0];
+                const line = `Top 3 Cities by Unique Attractions: ${info.city1} > ${info.city2} > ${info.city3}. Distance: ${info.distance.toFixed(2)} miles, Total Attractions: ${info.totalnumberofattractions}`;
+                rankElement.textContent = line;
+            }
+        }
+
+        async function showRouteTopCategories(route) {
+            const routeTopCategoriesList = document.getElementById('route-top-categories-list');
+            routeTopCategoriesList.innerHTML = '';
+            const cityIds = await loadRouteCityIds(route);
+            if (cityIds.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'No top categories available.';
+                routeTopCategoriesList.appendChild(li);
+                return;
+            }
+            const topCatRes = await fetch(`http://localhost:8080/topCityCategories?cityIds=${cityIds.join(',')}`);
+            const topCatData = await topCatRes.json();
+            if (!topCatData || topCatData.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'No top categories found for this route.';
+                routeTopCategoriesList.appendChild(li);
+            } else {
+                const seenCategories = new Set();
+                topCatData.forEach(item => {
+                    if (!seenCategories.has(item.category)) {
+                        seenCategories.add(item.category);
+                        const li = document.createElement('li');
+                        li.textContent = `${item.category}: ${item.attractioncount} attractions`;
+                        routeTopCategoriesList.appendChild(li);
+                    }
+                });
             }
         }
 
@@ -498,7 +527,7 @@
             const routesList = document.getElementById('routes-list');
             routesList.innerHTML = '';
             routes.forEach((route, index) => {
-                const cityLinks = route.cities.map((cityObj, i) => {
+                const cityLinks = route.cities.map((cityObj) => {
                     return `<span class="city-route" data-city="${cityObj.city}" data-state="${cityObj.state}" data-route-index="${index}">${cityObj.city}</span>`;
                 });
                 const li = document.createElement('li');
@@ -506,21 +535,20 @@
                     Route through ${cityLinks.join(' ➔ ')}<br>
                     Total Distance: ${route.distance} miles
                 `;
-                // If user clicks on route li (not on city link), open route modal
+
                 li.addEventListener('click', (event) => {
                     if (!event.target.classList.contains('city-route')) {
                         openRouteModal(route);
                     }
                 });
-                // If user clicks on city link, open city modal
+
                 li.querySelectorAll('.city-route').forEach(cityElement => {
                     cityElement.addEventListener('click', async (event) => {
                         event.stopPropagation();
                         const cityName = event.target.dataset.city;
                         const cityState = event.target.dataset.state;
                         const routeIndex = event.target.dataset.routeIndex;
-                        
-                        // Calls /cities to get city info
+
                         const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityName)}&stateName=${encodeURIComponent(cityState)}`);
                         const cityInfo = await cityInfoRes.json();
                         if (cityInfo && cityInfo.cityid) {
@@ -531,6 +559,7 @@
                         }
                     });
                 });
+
                 routesList.appendChild(li);
             });
         }
@@ -581,6 +610,7 @@
             }
 
             await showRouteCityRank(route);
+            await showRouteTopCategories(route);
 
             localStorage.setItem('currentRoute', JSON.stringify(route));
             routeModal.style.display = 'block';
@@ -631,20 +661,15 @@
             const cityModal = document.getElementById('city-modal');
             const cityCoordinatesElement = document.getElementById('city-coordinates');
             const cityPopDensityElement = document.getElementById('city-popdensity');
-            const topCategoriesList = document.getElementById('top-categories-list');
             const cityRecsInfo = document.getElementById('city-recs-info');
             const cityRouteStats = document.getElementById('city-route-stats');
             const randomAttractionInfo = document.getElementById('random-attraction-info');
 
-            // Clear previous info
-            topCategoriesList.innerHTML = '';
             cityRecsInfo.textContent = '';
             cityRouteStats.textContent = '';
             randomAttractionInfo.textContent = '';
-            // do not automatically load attractions; wait for applyAttractionFilters
 
             if (!cityInfo) {
-                // Calls /cities
                 const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityName)}&stateName=${encodeURIComponent(cityState)}`);
                 cityInfo = await cityInfoRes.json();
                 if (!cityInfo || !cityInfo.cityid) {
@@ -652,8 +677,8 @@
                     return;
                 }
             }
-            document.getElementById('city-name').textContent = `${cityName}, ${cityState} (City ID: ${cityInfo.cityid})`;
 
+            document.getElementById('city-name').textContent = `${cityName}, ${cityState} (City ID: ${cityInfo.cityid})`;
             cityCoordinatesElement.textContent = `Latitude: ${cityInfo.latitude}, Longitude: ${cityInfo.longitude}`;
             cityPopDensityElement.textContent = `Population: ${cityInfo.population}, Density: ${cityInfo.density}`;
 
@@ -661,32 +686,16 @@
             localStorage.setItem('currentCity', cityName);
             localStorage.setItem('currentCityId', cityInfo.cityid);
 
-            // Calls /topCityCategories
-            const topCatRes = await fetch(`http://localhost:8080/topCityCategories?cityIds=${cityInfo.cityid}`);
-            const topCatData = await topCatRes.json();
-            if (topCatData.length === 0) {
-                const li = document.createElement('li');
-                li.textContent = 'No top categories found.';
-                topCategoriesList.appendChild(li);
-            } else {
-                topCatData.forEach(item => {
-                    const li = document.createElement('li');
-                    li.textContent = `${item.category}: ${item.attractioncount} attractions`;
-                    topCategoriesList.appendChild(li);
-                });
-            }
-
-            // Calls /cityrecs
+            // cityrecs
             const recsRes = await fetch(`http://localhost:8080/cityrecs?cityId=${cityInfo.cityid}`);
             const recsData = await recsRes.json();
             if (recsData.length === 0) {
                 cityRecsInfo.textContent = 'No neighboring city recommendations.';
             } else {
-                // Just display the IDs as requested
                 cityRecsInfo.textContent = recsData.join(', ');
             }
 
-            // Calls /cityNumRoutesAndAvgDist
+            // cityNumRoutesAndAvgDist
             const routeStatsRes = await fetch(`http://localhost:8080/cityNumRoutesAndAvgDist?cityId=${cityInfo.cityid}`);
             const routeStatsData = await routeStatsRes.json();
             if (routeStatsData.length === 0) {
@@ -696,16 +705,16 @@
                 cityRouteStats.textContent = `This city connects to ${stats.numroutes} routes with an average distance of ${stats.avg_distance.toFixed(2)} miles.`;
             }
 
-            // Calls /randomAttraction
-            const randomRes = await fetch(`http://localhost:8080/randomAttraction?cityId=${cityInfo.cityid}`);
+            // randomAttraction by state
+            const randomRes = await fetch(`http://localhost:8080/randomAttraction?state=${encodeURIComponent(cityInfo.state)}`);
             const randomData = await randomRes.json();
-            if (!randomData || !randomData.name) {
+            if (!randomData || !randomData.attraction) {
                 randomAttractionInfo.textContent = 'No random attraction found.';
             } else {
-                randomAttractionInfo.textContent = `${randomData.name} (${randomData.subcategories}) - ${randomData.address}`;
+                randomAttractionInfo.textContent = `${randomData.attraction} (${randomData.subcategories}) - ${randomData.address} in ${randomData.city}, ${randomData.state}`;
             }
 
-            // Calls /subcategories here to update subcategory filters
+            // subcategories
             const catFilters = selectedCategories;
             let [category1, category2, category3] = ['_', '_', '_'];
             if (catFilters.length > 0) category1 = catFilters[0] || '_';
@@ -732,7 +741,8 @@
                 });
             }
 
-            // We do NOT load attractions yet; user must click "Apply Filters"
+            await loadAttractions(cityInfo.cityid, category1, category2, category3);
+
             cityModal.style.display = 'block';
         }
 
@@ -740,8 +750,6 @@
             document.getElementById('city-modal').style.display = 'none';
         }
 
-        // Called when user clicks "Apply Filters" on city card
-        // Calls /attractions or /subattractions or fallback to backupAttractions
         async function loadAttractions(cityId, category1, category2, category3) {
             const attractionsList = document.getElementById('attractions-list');
             attractionsList.innerHTML = '';
@@ -755,12 +763,10 @@
                     else if (i === 2) sub3 = selectedSubcategories[i];
                 }
 
-                // Calls /subattractions
                 const subUrl = `http://localhost:8080/subattractions?cityId=${cityId}&subcategory1=${encodeURIComponent(sub1)}&subcategory2=${encodeURIComponent(sub2)}&subcategory3=${encodeURIComponent(sub3)}`;
                 const subRes = await fetch(subUrl);
                 data = await subRes.json();
                 if (!data || data.length === 0) {
-                    // fallback to backupAttractions
                     const backupUrl = `http://localhost:8080/backupAttractions?cityId=${cityId}`;
                     const backupRes = await fetch(backupUrl);
                     const backupData = await backupRes.json();
@@ -786,12 +792,10 @@
                     attractionsList.appendChild(li);
                 });
             } else {
-                // Calls /attractions
                 const attractionUrl = `http://localhost:8080/attractions?cityId=${cityId}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`;
                 const res = await fetch(attractionUrl);
                 data = await res.json();
                 if (!data || data.length === 0) {
-                    // fallback to backupAttractions
                     const backupUrl = `http://localhost:8080/backupAttractions?cityId=${cityId}`;
                     const backupRes = await fetch(backupUrl);
                     const backupData = await backupRes.json();
@@ -838,14 +842,11 @@
             if (catFilters.length > 1) category2 = catFilters[1] || '_';
             if (catFilters.length > 2) category3 = catFilters[2] || '_';
 
-            // Calls /subcategories again to reset
             const subRes = await fetch(`http://localhost:8080/subcategories?cityId=${cityId}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`);
             let subData = await subRes.json();
             subData = subData.slice(0, 20);
             selectedSubcategories = [...new Set(subData)];
             updateSelectedSubcategories();
-
-            // Now filters are reset, user must click 'Apply Filters' again to load attractions
         }
 
         window.onload = async function() {
@@ -863,7 +864,6 @@
             const endCity = formData.destinationCity;
             const endState = formData.destinationState;
 
-            // Calls /routes
             const routesData = await fetchRoutesData(numInt, startCity, startState, endCity, endState);
 
             if (!Array.isArray(routesData) || routesData.length === 0) {
