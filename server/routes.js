@@ -341,48 +341,6 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
 // Route 10: GET /randomAttraction?cityId=11901
 const randomAttraction = async function(req, res) {
   const cityId = req.query.cityId;
-  // const attractionIds = req.query.attractionIds; 
-  // const attractionIdsArray = attractionIds.split(',').map(id => id.toString()).filter(Boolean);
-  // if (attractionIdsArray.length === 0) {
-  //   return res.json([]);
-  // }
-
-  connection.query(
-    `WITH temp as (
-      SELECT *
-      FROM attractions
-      WHERE id <> ANY($1)
-    )
-    SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
-    FROM temp t JOIN CityInfo c on t.cityid = c.id
-    WHERE c.id = ${cityId}
-    ORDER BY RANDOM()
-    LIMIT 1`,
-    [attractionIdsArray],
-    (err, data) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json(data.rows[0]);
-    }
-  );
-  if (!attractionIds) {
-    return res.status(400).json({ error: 'attractionids query param required' });
-  }
-
-  // WITH temp as (
-  //   SELECT *
-  //   FROM attractions
-  //   WHERE id NOT IN ('${attractionIds}')
-  // )
-  // SELECT t.name, t.address, t.latitude, t.longitude, t.rating, t.subcategories, c.name
-  // FROM temp t JOIN CityInfo c on t.cityid = c.id
-  // WHERE c.id = ${cityId}
-  // ORDER BY RANDOM()
-  // LIMIT 1
-  
-
   connection.query(
     `SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.subcategories
     FROM attractions a JOIN CityInfo c on a.cityid = c.id
