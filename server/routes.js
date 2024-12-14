@@ -419,6 +419,7 @@ const randomAttraction = async function(req, res) {
 
 // Route 10: GET /backupAttractions?cityId=11901
 const backupAttractions = async function(req, res) {
+<<<<<<< Updated upstream
   const cityId = parseInt(req.query.cityId,10);
   if (!cityId) {
     return res.status(400).json({ error: 'cityId query param required' });
@@ -445,6 +446,29 @@ const backupAttractions = async function(req, res) {
       res.json(data.rows);
     }
   );
+=======
+  return res.json();
+  // const cityId = req.params.attractionIds;
+  // if (!attractionIds) {
+  //   return res.status(400).json({ error: 'attractionids parameter required' });
+  // }
+
+  // connection.query(
+  //   `WITH temp AS (SELECT state FROM CityInfo WHERE id = ${cityId})
+  //   SELECT *
+  //   FROM attractionsbackup a JOIN temp t ON a.state = t.state
+  //   ORDER BY rating DESC
+  //   LIMIT 10`,
+  //   [],
+  //   (err, data) => {
+  //     if (err) {
+  //       console.error(err);
+  //       return res.status(500).json({ error: 'Database error' });
+  //     }
+  //     res.json(data.rows);
+  //   }
+  // );
+>>>>>>> Stashed changes
 }
 
 // Route 11: GET /cityNumRoutesAndAvgDist?cityId=11901
