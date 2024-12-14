@@ -317,7 +317,7 @@ const routesByAttractions = async function(req, res) {
   );
 }
 
-// Route 9: GET /cityrankbyattractions?cityIds=11901,688,8485,...
+// Route 9: GET /cityrankbyattractions?cityIds=19511,25090,17705,...
 const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIds = req.query.cityIds; 
   if (!cityIds) {
@@ -327,27 +327,27 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   const cityIdsArray = cityIds.split(',').map(id => parseInt(id, 10)).filter(Boolean);
   if (cityIdsArray.length === 0) {
     return res.json([]);
-  }
-
+  } 
   connection.query(
     `WITH temp AS (
-      SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
-      FROM CityInfo c
-      LEFT JOIN Attractions a ON c.id = a.cityid
-      WHERE c.id = ANY($!1)
-      GROUP BY c.id, c.name
-      ORDER BY NumAttractions DESC
-      LIMIT 3
-    ), temp1 AS (SELECT * FROM TEMP LIMIT 1), temp2 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 1), temp3 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 2)
-SELECT r1.startcity AS city1, r1.endcity AS city2, r2.endcity AS city3, r1.distance + r2.distance AS distance, temp1.NumAttractions + temp2.NumAttractions + temp3.NumAttractions AS totalNumberOfAttractions
-FROM Routes r1 JOIN temp1 ON r1.startcity = temp1.CityID JOIN temp2 ON r1.endcity = temp2.CityID JOIN Routes r2 ON r1.endcity = r2.startcity JOIN temp3 ON r2.endcity = temp3.CityID;`,
+       SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
+       FROM CityInfo c
+       LEFT JOIN Attractions a ON c.id = a.cityid
+       WHERE c.id = ANY($1)
+       GROUP BY c.id, c.name
+       ORDER BY NumAttractions DESC
+       LIMIT 3
+     ), temp1 AS (SELECT * FROM TEMP LIMIT 1), temp2 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 1), temp3 AS (SELECT * FROM TEMP LIMIT 1 OFFSET 2)
+      SELECT temp1.cityName AS city1, temp2.cityName AS city2, temp3.cityName AS city3, r1.distance + r2.distance AS distance, temp1.NumAttractions + temp2.NumAttractions + temp3.NumAttractions AS totalNumberOfAttractions
+    FROM Routes r1 JOIN temp1 ON r1.startcity = temp1.CityID JOIN temp2 ON r1.endcity = temp2.CityID JOIN Routes r2 ON r1.endcity = r2.startcity JOIN temp3 ON r2.endcity = temp3.CityID;
+    `,
     [cityIdsArray],
     (err, data) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.json(data.rows.map(row => row.cityname));
+      res.json(data.rows);
     }
   );
 }
