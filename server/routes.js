@@ -352,6 +352,40 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   );
 }
 
+// Route 9.5: GET /cityrankbyattractionsbackup?cityIds=19511,25090,17705,...
+const rankCitiesByUniqueAttractionsBackup = async function(req, res) {
+  const cityIds = req.query.cityIds; 
+  if (!cityIds) {
+    return res.status(400).json({ error: 'cityIds query param required' });
+  }
+
+  const cityIdsArray = cityIds.split(',').map(id => parseInt(id, 10)).filter(Boolean);
+  if (cityIdsArray.length === 0) {
+    return res.json([]);
+  }
+
+  connection.query(
+    `WITH temp AS (
+       SELECT c.id AS CityID, c.name AS CityName, COUNT(DISTINCT a.id) AS NumAttractions
+       FROM CityInfo c
+       LEFT JOIN Attractions a ON c.id = a.cityid
+       WHERE c.id = ANY($1)
+       GROUP BY c.id, c.name
+       ORDER BY NumAttractions DESC
+     )
+     SELECT temp.CityName
+     FROM temp;`,
+    [cityIdsArray],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(data.rows.map(row => row.cityname));
+    }
+  );
+}
+
 // Route 10: GET /randomAttraction?state=Florida
 const randomAttraction = async function(req, res) {
   const state = req.query.state;
@@ -473,5 +507,6 @@ module.exports = {
   backupAttractions,
   randomAttraction,
   cityNumRoutesAndAvgDist,
-  route_subattractions
+  route_subattractions, 
+  rankCitiesByUniqueAttractionsBackup
 };
