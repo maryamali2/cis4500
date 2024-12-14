@@ -352,15 +352,26 @@ FROM Routes r1 JOIN temp1 ON r1.startcity = temp1.CityID JOIN temp2 ON r1.endcit
   );
 }
 
-// Route 10: GET /randomAttraction?cityId=11901
+// Route 10: GET /randomAttraction?state=Florida
 const randomAttraction = async function(req, res) {
-  const cityId = req.query.cityId;
+  const state = req.query.state;
   connection.query(
-    `SELECT a.name, c.name, c.state, a.address, a.latitude, a.longitude, a.rating, a.subcategories
-    FROM attractions a JOIN CityInfo c on a.cityid = c.id, (SELECT state FROM CityInfo WHERE id = ${cityId}) state
-    WHERE c.state = state.state
-    ORDER BY RANDOM()
-    LIMIT 1`,
+    `WITH temp AS (
+      (SELECT a.name as attraction, c.name as city, c.state, a.address, a.latitude, a.longitude, a.rating, a.categories, a.subcategories
+      FROM attractions a JOIN CityInfo c on a.cityid = c.id
+      WHERE c.state = '${state}'
+      ORDER BY RANDOM()
+      LIMIT 1)
+      UNION
+      (SELECT ab.name as attraction, ab.city, ab.state, ab.address, ab.latitude, ab.longitude, ab.rating, ab.categories,ab.subcategories
+      FROM attractionsbackup ab
+      WHERE ab.state = '${state}'
+      ORDER BY RANDOM()
+      LIMIT 1)
+  )
+  SELECT *
+  FROM temp t
+  LIMIT 1;`,
     [],
     (err, data) => {
       if (err) {
