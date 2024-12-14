@@ -109,12 +109,10 @@
     </div>
 
     <script>
-        // This page calls the /cities route to validate the existence of the source and destination cities.
-        // Specifically:
-        // 1. /cities?cityName=...&stateName=... for the source city/state
-        // 2. /cities?cityName=...&stateName=... for the destination city/state
+        // In index.html, we only call the /cities route to validate source and destination:
+        // /cities?cityName=...&stateName=... for source city
+        // /cities?cityName=...&stateName=... for destination city
 
-        // Function to capitalize inputs (first letter uppercase, rest lowercase)
         function capitalizeInput(str) {
             if (!str) return str;
             return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -140,7 +138,6 @@
             destinationCity = capitalizeInput(destinationCity);
             destinationState = capitalizeInput(destinationState);
 
-            // Update the input fields with corrected values (optional)
             document.getElementById('source-city').value = sourceCity;
             document.getElementById('source-state').value = sourceState;
             document.getElementById('destination-city').value = destinationCity;
@@ -151,8 +148,7 @@
                 return;
             }
 
-            // Calls /cities route to validate the source city/state
-            // GET /cities?cityName=<sourceCity>&stateName=<sourceState>
+            // Validate source city
             const sourceRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(sourceCity)}&stateName=${encodeURIComponent(sourceState)}`);
             const sourceData = await sourceRes.json();
 
@@ -161,8 +157,7 @@
                 return;
             }
 
-            // Calls /cities route again to validate the destination city/state
-            // GET /cities?cityName=<destinationCity>&stateName=<destinationState>
+            // Validate destination city
             const destRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(destinationCity)}&stateName=${encodeURIComponent(destinationState)}`);
             const destData = await destRes.json();
 
@@ -171,7 +166,6 @@
                 return;
             }
 
-            // Both cities are valid, save form data and go to routes page
             const formData = {
                 sourceCity,
                 sourceState,
@@ -180,10 +174,9 @@
                 maxCities
             };
             localStorage.setItem('formData', JSON.stringify(formData));
-            window.location.href = 'routes.html'; // Will use the /routes route in routes.html
+            window.location.href = 'routes.html'; 
         });
 
-        // Load saved form data
         window.onload = function() {
             const savedFormData = localStorage.getItem('formData');
             if (savedFormData) {
