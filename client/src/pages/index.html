@@ -113,10 +113,7 @@
         // /cities?cityName=...&stateName=... for source city
         // /cities?cityName=...&stateName=... for destination city
 
-        function capitalizeInput(str) {
-            if (!str) return str;
-            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-        }
+        // Removed capitalizeInput function and related case correction code
 
         document.getElementById('search-form').addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -132,6 +129,8 @@
             cityError.textContent = '';
             maxCitiesError.textContent = '';
 
+            // Removed case correction
+            /*
             // Case correction
             sourceCity = capitalizeInput(sourceCity);
             sourceState = capitalizeInput(sourceState);
@@ -142,6 +141,7 @@
             document.getElementById('source-state').value = sourceState;
             document.getElementById('destination-city').value = destinationCity;
             document.getElementById('destination-state').value = destinationState;
+            */
 
             if (maxCities > 3) {
                 maxCitiesError.textContent = 'You cannot have more than 3 intermediate cities.';
