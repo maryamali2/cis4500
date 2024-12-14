@@ -268,13 +268,13 @@ const cityRecs = async function(req, res) {
   const id = parseInt(req.query.cityId, 10);
   connection.query(
     `SELECT closeCity FROM (
-       (SELECT endCity as closeCity, Routes.distance as distance
-        FROM Routes JOIN CityInfo ON CityInfo.id = Routes.startCity
-        WHERE CityInfo.id = ${id})
+       (SELECT c2.name as closeCity, Routes.distance as distance
+        FROM Routes JOIN CityInfo c1 ON c1.id = Routes.startCity JOIN CityInfo c2 ON c2.id = Routes.endCity
+        WHERE c1.id = ${id})
        UNION
-       (SELECT startCity as closeCity, Routes.distance as distance
-        FROM Routes JOIN CityInfo ON CityInfo.id = Routes.endCity
-        WHERE CityInfo.id = ${id})
+       (SELECT c2.name as closeCity, Routes.distance as distance
+        FROM Routes JOIN CityInfo c1 ON c1.id = Routes.endCity JOIN CityInfo c2 ON c2.id = Routes.startCity
+        WHERE c1.id = ${id})
      ) as A
      ORDER BY distance
      LIMIT 10;`,
