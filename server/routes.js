@@ -356,9 +356,9 @@ FROM Routes r1 JOIN temp1 ON r1.startcity = temp1.CityID JOIN temp2 ON r1.endcit
 const randomAttraction = async function(req, res) {
   const cityId = req.query.cityId;
   connection.query(
-    `SELECT a.name, a.address, a.latitude, a.longitude, a.rating, a.subcategories
-    FROM attractions a JOIN CityInfo c on a.cityid = c.id
-    WHERE c.id = ${cityId}
+    `SELECT a.name, c.name, c.state, a.address, a.latitude, a.longitude, a.rating, a.subcategories
+    FROM attractions a JOIN CityInfo c on a.cityid = c.id, (SELECT state FROM CityInfo WHERE id = ${cityId}) state
+    WHERE c.state = state.state
     ORDER BY RANDOM()
     LIMIT 1`,
     [],
