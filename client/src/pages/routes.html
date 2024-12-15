@@ -113,6 +113,13 @@
             font-family: 'Garamond', serif;
         }
 
+        .success-message {
+            color: green;
+            font-size: 14px;
+            margin-top: 5px;
+            font-family: 'Garamond', serif;
+        }
+
         .minimal-button {
             margin-top: 20px;
             font-size: 18px;
@@ -177,7 +184,7 @@
             padding: 30px;
             border: 1px solid #888;
             width: 80%;
-            max-width: 600px;
+            max-width: 800px; /* Increased width to accommodate more details */
             position: relative;
             font-size: 18px;
         }
@@ -227,6 +234,15 @@
         .neighboring-city:hover {
             text-decoration: underline;
         }
+
+        /* Additional styling for attraction details */
+        .attraction-details {
+            margin-bottom: 10px;
+        }
+
+        .attraction-details strong {
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -249,6 +265,7 @@
             <div class="selected-options" id="selected-categories"></div>
         </div>
         <div id="category-error" class="error-message"></div>
+        <div id="category-success" class="success-message"></div>
 
         <button onclick="applyFilters()" class="minimal-button">Apply Filters</button>
         <button onclick="resetFilters()" class="minimal-button">Reset Filters</button>
@@ -290,6 +307,8 @@
                 <div class="options" id="subcategory-options" style="position: absolute;"></div>
                 <div class="selected-options" id="selected-subcategories"></div>
             </div>
+
+            <div id="attraction-filter-success" class="success-message"></div>
 
             <button onclick="applyAttractionFilters()" class="minimal-button">Apply Filters</button>
             <button onclick="resetAttractionFilters()" class="minimal-button">Reset Filters</button>
@@ -370,6 +389,7 @@
             });
             document.getElementById('category-input').value = '';
             document.getElementById('category-error').textContent = '';
+            document.getElementById('category-success').textContent = '';
         }
 
         function selectCategory(optionDiv) {
@@ -460,8 +480,7 @@
             return cityIds;
         }
 
-        // rankCitiesByUniqueAttractions output:
-        // [{"city1":"Philadelphia","city2":"Trenton","city3":"New York","distance":79.4770,"totalnumberofattractions":14154}]
+        // Updated showRouteCityRank with fallback to random ordering
         async function showRouteCityRank(route) {
             const rankElement = document.getElementById('route-city-rank');
             rankElement.textContent = '';
@@ -471,15 +490,43 @@
                 return;
             }
             const rankUrl = `http://localhost:8080/cityrankbyattractions?cityIds=${cityIds.join(',')}`;
-            const rankRes = await fetch(rankUrl);
-            const rankData = await rankRes.json();
+            let rankRes = await fetch(rankUrl);
+            let rankData = await rankRes.json();
             if (!rankData || rankData.length === 0) {
-                rankElement.textContent = 'No city ranking available.';
+                // Fallback to backup
+                const backupUrl = `http://localhost:8080/cityrankbyattractionsbackup?cityIds=${cityIds.join(',')}`;
+                rankRes = await fetch(backupUrl);
+                rankData = await rankRes.json();
+                if (!rankData || rankData.length === 0) {
+                    // If both primary and backup fail, display random ordering
+                    const shuffledCities = shuffleArray(route.cities).map(c => `${c.city}`);
+                    rankElement.textContent = `City Ranking: ${shuffledCities.join(' > ')}`;
+                    return;
+                }
+                // Assuming backupData is an array of city names
+                const cities = rankData.map(cityObj => cityObj.cityname).filter(name => name); // Ensure names are present
+                if (cities.length === 0) {
+                    // If backup data also has no valid names, display random ordering
+                    const shuffledCities = shuffleArray(route.cities).map(c => `${c.city}`);
+                    rankElement.textContent = `City Ranking: ${shuffledCities.join(' > ')}`;
+                } else {
+                    rankElement.textContent = `Top 3 Cities by Unique Attractions: ${cities.join(' > ')}`;
+                }
             } else {
                 const info = rankData[0];
                 const line = `Top 3 Cities by Unique Attractions: ${info.city1} > ${info.city2} > ${info.city3}. Distance: ${info.distance.toFixed(2)} miles, Total Attractions: ${info.totalnumberofattractions}`;
                 rankElement.textContent = line;
             }
+        }
+
+        // Utility function to shuffle an array
+        function shuffleArray(array) {
+            const shuffled = array.slice();
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
         }
 
         async function showRouteTopCategories(route) {
@@ -499,14 +546,14 @@
                 li.textContent = 'No top categories found for this route.';
                 routeTopCategoriesList.appendChild(li);
             } else {
-                const seenCategories = new Set();
                 topCatData.forEach(item => {
-                    if (!seenCategories.has(item.category)) {
-                        seenCategories.add(item.category);
-                        const li = document.createElement('li');
-                        li.textContent = `${item.category}: ${item.attractioncount} attractions`;
-                        routeTopCategoriesList.appendChild(li);
-                    }
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <strong>${item.category}</strong>: ${item.attractioncount} attractions<br>
+                        Top Attraction: ${item.name} (${item.rating} stars)<br>
+                        Address: ${item.address ? item.address : 'No address provided'}
+                    `;
+                    routeTopCategoriesList.appendChild(li);
                 });
             }
         }
@@ -566,6 +613,10 @@
 
         function applyFilters() {
             filters.sortBy = document.getElementById('sort-by').value;
+            document.getElementById('category-success').textContent = 'Filters applied successfully!';
+            setTimeout(() => {
+                document.getElementById('category-success').textContent = '';
+            }, 3000);
             loadRoutes();
         }
 
@@ -664,10 +715,12 @@
             const cityRecsInfo = document.getElementById('city-recs-info');
             const cityRouteStats = document.getElementById('city-route-stats');
             const randomAttractionInfo = document.getElementById('random-attraction-info');
+            const attractionFilterSuccess = document.getElementById('attraction-filter-success');
 
             cityRecsInfo.textContent = '';
             cityRouteStats.textContent = '';
             randomAttractionInfo.textContent = '';
+            attractionFilterSuccess.textContent = '';
 
             if (!cityInfo) {
                 const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityName)}&stateName=${encodeURIComponent(cityState)}`);
@@ -711,15 +764,22 @@
             if (!randomData || !randomData.attraction) {
                 randomAttractionInfo.textContent = 'No random attraction found.';
             } else {
-                randomAttractionInfo.textContent = `${randomData.attraction} (${randomData.subcategories}) - ${randomData.address} in ${randomData.city}, ${randomData.state}`;
+                // Displaying compact details
+                const address = randomData.address ? randomData.address : 'No address provided';
+                randomAttractionInfo.innerHTML = `
+                    <strong>${randomData.attraction}</strong><br>
+                    Address: ${address}<br>
+                    Rating: ${randomData.rating}<br>
+                    Categories: ${randomData.categories}
+                `;
             }
 
             // subcategories
             const catFilters = selectedCategories;
-            let [category1, category2, category3] = ['_', '_', '_'];
-            if (catFilters.length > 0) category1 = catFilters[0] || '_';
-            if (catFilters.length > 1) category2 = catFilters[1] || '_';
-            if (catFilters.length > 2) category3 = catFilters[2] || '_';
+            let [category1, category2, category3] = ['', '', ''];
+            if (catFilters.length > 0) category1 = catFilters[0] || '';
+            if (catFilters.length > 1) category2 = catFilters[1] || '';
+            if (catFilters.length > 2) category3 = catFilters[2] || '';
 
             const subRes = await fetch(`http://localhost:8080/subcategories?cityId=${cityInfo.cityid}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`);
             let subData = await subRes.json();
@@ -752,84 +812,108 @@
 
         async function loadAttractions(cityId, category1, category2, category3) {
             const attractionsList = document.getElementById('attractions-list');
+            const attractionFilterSuccess = document.getElementById('attraction-filter-success');
             attractionsList.innerHTML = '';
+            attractionFilterSuccess.textContent = '';
 
-            let data;
-            if (selectedSubcategories.length > 0) {
-                let [sub1, sub2, sub3] = ['_', '_', '_'];
-                for (let i = 0; i < selectedSubcategories.length; i++) {
-                    if (i === 0) sub1 = selectedSubcategories[i];
-                    else if (i === 1) sub2 = selectedSubcategories[i];
-                    else if (i === 2) sub3 = selectedSubcategories[i];
-                }
+            let allAttractions = [];
 
-                const subUrl = `http://localhost:8080/subattractions?cityId=${cityId}&subcategory1=${encodeURIComponent(sub1)}&subcategory2=${encodeURIComponent(sub2)}&subcategory3=${encodeURIComponent(sub3)}`;
-                const subRes = await fetch(subUrl);
-                data = await subRes.json();
-                if (!data || data.length === 0) {
-                    const backupUrl = `http://localhost:8080/backupAttractions?cityId=${cityId}`;
-                    const backupRes = await fetch(backupUrl);
-                    const backupData = await backupRes.json();
-
-                    if (backupData && backupData.length > 0) {
-                        backupData.forEach(attraction => {
-                            const li = document.createElement('li');
-                            li.textContent = `${attraction.name} (${attraction.subcategories})`;
-                            attractionsList.appendChild(li);
-                        });
-                    } else {
-                        const li = document.createElement('li');
-                        li.textContent = 'No attractions found.';
-                        attractionsList.appendChild(li);
-                    }
-                    return;
-                }
-                data.forEach(attraction => {
-                    const li = document.createElement('li');
-                    const attName = attraction.attraction || attraction.name; 
-                    const attSub = attraction.subcategories;
-                    li.textContent = `${attName} (${attSub})`;
-                    attractionsList.appendChild(li);
-                });
-            } else {
-                const attractionUrl = `http://localhost:8080/attractions?cityId=${cityId}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`;
+            try {
+                // Fetch all attractions for the city
+                const attractionUrl = `http://localhost:8080/attractions?cityId=${cityId}`;
                 const res = await fetch(attractionUrl);
-                data = await res.json();
-                if (!data || data.length === 0) {
+                allAttractions = await res.json();
+            } catch (error) {
+                console.error('Error fetching attractions:', error);
+                attractionsList.innerHTML = '<li>Error loading attractions.</li>';
+                return;
+            }
+
+            if (!Array.isArray(allAttractions)) {
+                attractionsList.innerHTML = '<li>No attractions found.</li>';
+                return;
+            }
+
+            let filteredAttractions = allAttractions;
+
+            if (selectedCategories.length > 0) {
+                // Filter attractions based on selected categories
+                filteredAttractions = allAttractions.filter(attraction => {
+                    if (!attraction.categories) return false;
+                    const attractionCategories = attraction.categories.split(',').map(cat => cat.trim());
+                    return selectedCategories.some(selectedCat => attractionCategories.includes(selectedCat));
+                });
+            }
+
+            if (filteredAttractions.length === 0) {
+                // If no attractions match the filters, attempt to fetch backup attractions
+                try {
                     const backupUrl = `http://localhost:8080/backupAttractions?cityId=${cityId}`;
                     const backupRes = await fetch(backupUrl);
                     const backupData = await backupRes.json();
 
-                    if (backupData && backupData.length > 0) {
+                    if (Array.isArray(backupData) && backupData.length > 0) {
                         backupData.forEach(attraction => {
                             const li = document.createElement('li');
-                            li.textContent = `${attraction.name} (${attraction.subcategories})`;
+                            const attName = attraction.attraction || attraction.name; 
+                            const address = attraction.address ? attraction.address : 'No address provided';
+                            const rating = attraction.rating ? attraction.rating : 'N/A';
+                            const categories = attraction.categories ? attraction.categories : 'N/A';
+
+                            li.innerHTML = `
+                                <div class="attraction-details">
+                                    <strong>${attName}</strong><br>
+                                    Address: ${address}<br>
+                                    Rating: ${rating}<br>
+                                    Categories: ${categories}
+                                </div>
+                            `;
                             attractionsList.appendChild(li);
                         });
+                        attractionFilterSuccess.textContent = 'Filters applied succesfully!';
                     } else {
                         const li = document.createElement('li');
                         li.textContent = 'No attractions found.';
                         attractionsList.appendChild(li);
+                        attractionFilterSuccess.textContent = 'No attractions available to display.';
                     }
-                    return;
+                } catch (error) {
+                    console.error('Error fetching backup attractions:', error);
+                    attractionsList.innerHTML = '<li>Error loading attractions.</li>';
                 }
-                data.forEach(attraction => {
+            } else {
+                // Display filtered attractions
+                filteredAttractions.forEach(attraction => {
                     const li = document.createElement('li');
                     const attName = attraction.attraction || attraction.name; 
-                    const attSub = attraction.subcategories;
-                    li.textContent = `${attName} (${attSub})`;
+                    const address = attraction.address ? attraction.address : 'No address provided';
+                    const rating = attraction.rating ? attraction.rating : 'N/A';
+                    const categories = attraction.categories ? attraction.categories : 'N/A';
+
+                    li.innerHTML = `
+                        <div class="attraction-details">
+                            <strong>${attName}</strong><br>
+                            Address: ${address}<br>
+                            Rating: ${rating}<br>
+                            Categories: ${categories}
+                        </div>
+                    `;
                     attractionsList.appendChild(li);
                 });
+                attractionFilterSuccess.textContent = 'Filters applied successfully!';
+                setTimeout(() => {
+                    attractionFilterSuccess.textContent = '';
+                }, 3000);
             }
         }
 
         async function applyAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
             const catFilters = selectedCategories;
-            let [category1, category2, category3] = ['_', '_', '_'];
-            if (catFilters.length > 0) category1 = catFilters[0] || '_';
-            if (catFilters.length > 1) category2 = catFilters[1] || '_';
-            if (catFilters.length > 2) category3 = catFilters[2] || '_';
+            let [category1, category2, category3] = ['', '', ''];
+            if (catFilters.length > 0) category1 = catFilters[0] || '';
+            if (catFilters.length > 1) category2 = catFilters[1] || '';
+            if (catFilters.length > 2) category3 = catFilters[2] || '';
 
             await loadAttractions(cityId, category1, category2, category3);
         }
@@ -837,20 +921,20 @@
         async function resetAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
             const catFilters = selectedCategories;
-            let [category1, category2, category3] = ['_', '_', '_'];
-            if (catFilters.length > 0) category1 = catFilters[0] || '_';
-            if (catFilters.length > 1) category2 = catFilters[1] || '_';
-            if (catFilters.length > 2) category3 = catFilters[2] || '_';
+            let [category1, category2, category3] = ['', '', ''];
+            if (catFilters.length > 0) category1 = catFilters[0] || '';
+            if (catFilters.length > 1) category2 = catFilters[1] || '';
+            if (catFilters.length > 2) category3 = catFilters[2] || '';
 
-            const subRes = await fetch(`http://localhost:8080/subcategories?cityId=${cityId}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`);
-            let subData = await subRes.json();
-            subData = subData.slice(0, 20);
-            selectedSubcategories = [...new Set(subData)];
+            selectedSubcategories = [];
             updateSelectedSubcategories();
+
+            // Reload attractions without any subcategory filters
+            await loadAttractions(cityId, category1, category2, category3);
         }
 
         window.onload = async function() {
-            if (!formData || !formData.sourceCity || !formData.sourceState || !formData.destinationCity || !formData.destinationState || !formData.maxCities) {
+            if (!formData || !formData.sourceCity || !formData.sourceState || !formData.destinationCity || !formData.destinationState || formData.maxCities === undefined) {
                 alert('Please fill out the form correctly.');
                 window.location.href = 'index.html';
                 return;
