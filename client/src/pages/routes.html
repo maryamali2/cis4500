@@ -391,6 +391,30 @@
             'Public Services & Government'
         ];
 
+        /* Predefined Subcategories for Filtering */
+        const predefinedSubcategories = [
+            'Museums',
+            'Parks',
+            'Historical Sites',
+            'Theaters',
+            'Sports Venues',
+            'Concert Halls',
+            'Art Galleries',
+            'Zoos',
+            'Aquariums',
+            'Botanical Gardens',
+            'Amusement Parks',
+            'Landmarks',
+            'Shopping Centers',
+            'Restaurants',
+            'Nightclubs',
+            'Cafes',
+            'Bars',
+            'Bakeries',
+            'Ice Cream Shops',
+            'Breweries'
+        ];
+
         /* Populate Category Options in Filter Section */
         const categoryOptionsContainer = document.getElementById('category-options');
         sampleCategories.forEach(category => {
@@ -399,6 +423,16 @@
             optionDiv.dataset.value = category;
             optionDiv.addEventListener('click', () => selectCategory(optionDiv)); // Event listener for selecting a category
             categoryOptionsContainer.appendChild(optionDiv);
+        });
+
+        /* Populate Subcategory Options in City Modal */
+        const subcategoryOptionsContainer = document.getElementById('subcategory-options');
+        predefinedSubcategories.forEach(subcat => {
+            const optionDiv = document.createElement('div');
+            optionDiv.textContent = subcat;
+            optionDiv.dataset.value = subcat;
+            optionDiv.addEventListener('click', () => selectSubcategory(optionDiv)); // Event listener for selecting a subcategory
+            subcategoryOptionsContainer.appendChild(optionDiv);
         });
 
         /* Display Selected Categories as Tags */
@@ -453,6 +487,60 @@
         document.addEventListener('click', (event) => {
             if (!document.getElementById('category-select').contains(event.target)) {
                 document.getElementById('category-options').style.display = 'none';
+            }
+        });
+
+        /* Display Selected Subcategories as Tags */
+        const selectedSubcategoriesContainer = document.getElementById('selected-subcategories');
+        let selectedSubcategories = [];
+
+        function updateSelectedSubcategories() {
+            selectedSubcategoriesContainer.innerHTML = '';
+            if (selectedSubcategories.length === 0) {
+                const noSubs = document.createElement('p');
+                noSubs.textContent = 'No subcategories selected.';
+                selectedSubcategoriesContainer.appendChild(noSubs);
+                return;
+            }
+            selectedSubcategories.forEach(subcat => {
+                const tagDiv = document.createElement('div');
+                tagDiv.classList.add('tag');
+                tagDiv.textContent = subcat;
+                const removeSpan = document.createElement('span');
+                removeSpan.classList.add('remove');
+                removeSpan.textContent = '×';
+                removeSpan.addEventListener('click', () => removeSubcategory(subcat)); // Event listener for removing a subcategory
+                tagDiv.appendChild(removeSpan);
+                selectedSubcategoriesContainer.appendChild(tagDiv);
+            });
+        }
+
+        /* Function to Select a Subcategory */
+        function selectSubcategory(optionDiv) {
+            const subcat = optionDiv.dataset.value;
+            if (!selectedSubcategories.includes(subcat)) {
+                selectedSubcategories.push(subcat);
+                updateSelectedSubcategories();
+            }
+        }
+
+        /* Function to Remove a Selected Subcategory */
+        function removeSubcategory(subcat) {
+            selectedSubcategories = selectedSubcategories.filter(sc => sc !== subcat);
+            updateSelectedSubcategories();
+        }
+
+        /* Toggle Subcategory Options Display on Input Click */
+        const subcategoryInput = document.getElementById('subcategory-input');
+        subcategoryInput.addEventListener('click', () => {
+            const options = document.getElementById('subcategory-options');
+            options.style.display = (options.style.display === 'block') ? 'none' : 'block';
+        });
+
+        /* Close Subcategory Options Dropdown When Clicking Outside */
+        document.addEventListener('click', (event) => {
+            if (!document.getElementById('subcategory-select').contains(event.target)) {
+                document.getElementById('subcategory-options').style.display = 'none';
             }
         });
 
@@ -778,46 +866,6 @@
             document.getElementById('route-modal').style.display = 'none';
         }
 
-        let selectedSubcategories = []; // Stores selected subcategories within city modal
-        const selectedSubcategoriesContainer = document.getElementById('selected-subcategories');
-
-        /* Display Selected Subcategories as Tags */
-        function updateSelectedSubcategories() {
-            selectedSubcategoriesContainer.innerHTML = '';
-            if (selectedSubcategories.length === 0) {
-                const noSubs = document.createElement('p');
-                noSubs.textContent = 'No subcategories available.';
-                selectedSubcategoriesContainer.appendChild(noSubs);
-                return;
-            }
-            selectedSubcategories.forEach(subcat => {
-                const tagDiv = document.createElement('div');
-                tagDiv.classList.add('tag');
-                tagDiv.textContent = subcat;
-                const removeSpan = document.createElement('span');
-                removeSpan.classList.add('remove');
-                removeSpan.textContent = '×';
-                removeSpan.addEventListener('click', () => removeSubcategory(subcat)); // Event listener for removing a subcategory
-                tagDiv.appendChild(removeSpan);
-                selectedSubcategoriesContainer.appendChild(tagDiv);
-            });
-        }
-
-        /* Function to Select a Subcategory */
-        function selectSubcategory(optionDiv) {
-            const subcat = optionDiv.dataset.value;
-            if (!selectedSubcategories.includes(subcat)) {
-                selectedSubcategories.push(subcat);
-                updateSelectedSubcategories();
-            }
-        }
-
-        /* Function to Remove a Selected Subcategory */
-        function removeSubcategory(subcat) {
-            selectedSubcategories = selectedSubcategories.filter(sc => sc !== subcat);
-            updateSelectedSubcategories();
-        }
-
         /*
             Open City Modal
             - Displays detailed information about a selected city
@@ -893,38 +941,8 @@
                 `;
             }
 
-            /* 
-                Fetch Subcategories for the City by calling /subcategories endpoint
-                - Limits to top 20 subcategories
-            */
-            const catFilters = selectedCategories;
-            let [category1, category2, category3] = ['', '', ''];
-            if (catFilters.length > 0) category1 = catFilters[0] || '';
-            if (catFilters.length > 1) category2 = catFilters[1] || '';
-            if (catFilters.length > 2) category3 = catFilters[2] || '';
-
-            const subRes = await fetch(`http://localhost:8080/subcategories?cityId=${cityInfo.cityid}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`);
-            let subData = await subRes.json();
-            subData = subData.slice(0, 20); // Limit to top 20 subcategories
-            const subcategoryOptionsContainer = document.getElementById('subcategory-options');
-            subcategoryOptionsContainer.innerHTML = '';
-            if (subData.length === 0) {
-                selectedSubcategories = [];
-                updateSelectedSubcategories();
-            } else {
-                selectedSubcategories = [...new Set(subData)];
-                updateSelectedSubcategories();
-                subData.forEach(subcat => {
-                    const optionDiv = document.createElement('div');
-                    optionDiv.textContent = subcat;
-                    optionDiv.dataset.value = subcat;
-                    optionDiv.addEventListener('click', () => selectSubcategory(optionDiv)); // Event listener for selecting a subcategory
-                    subcategoryOptionsContainer.appendChild(optionDiv);
-                });
-            }
-
             // Load attractions based on selected categories and subcategories
-            await loadAttractions(cityInfo.cityid, category1, category2, category3);
+            await loadAttractions(cityInfo.cityid, selectedCategories, selectedSubcategories);
 
             // Display the city modal
             cityModal.style.display = 'block';
@@ -941,11 +959,11 @@
         /*
             Load Attractions
             - Fetches all attractions for a city by calling /attractions endpoint
-            - Filters attractions on the frontend based on selected categories
+            - Filters attractions on the frontend based on selected categories and subcategories
             - Displays backup attractions by calling /backupAttractions if no matches are found
             - Provides user feedback through success messages
         */
-        async function loadAttractions(cityId, category1, category2, category3) {
+        async function loadAttractions(cityId, categories, subcategories) {
             const attractionsList = document.getElementById('attractions-list');
             const attractionFilterSuccess = document.getElementById('attraction-filter-success');
             attractionsList.innerHTML = '';
@@ -971,12 +989,21 @@
 
             let filteredAttractions = allAttractions;
 
-            if (selectedCategories.length > 0) {
+            if (categories.length > 0) {
                 // Filter attractions based on selected categories
-                filteredAttractions = allAttractions.filter(attraction => {
+                filteredAttractions = filteredAttractions.filter(attraction => {
                     if (!attraction.categories) return false;
                     const attractionCategories = attraction.categories.split(',').map(cat => cat.trim());
-                    return selectedCategories.some(selectedCat => attractionCategories.includes(selectedCat));
+                    return categories.some(selectedCat => attractionCategories.includes(selectedCat));
+                });
+            }
+
+            if (subcategories.length > 0) {
+                // Further filter attractions based on selected subcategories
+                filteredAttractions = filteredAttractions.filter(attraction => {
+                    if (!attraction.subcategories) return false;
+                    const attractionSubcategories = attraction.subcategories.split(',').map(sub => sub.trim());
+                    return subcategories.some(selectedSubcat => attractionSubcategories.includes(selectedSubcat));
                 });
             }
 
@@ -1044,36 +1071,25 @@
 
         /*
             Apply Attraction Filters
-            - Reloads attractions based on current selected categories
+            - Reloads attractions based on current selected categories and subcategories
         */
         async function applyAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
-            const catFilters = selectedCategories;
-            let [category1, category2, category3] = ['', '', ''];
-            if (catFilters.length > 0) category1 = catFilters[0] || '';
-            if (catFilters.length > 1) category2 = catFilters[1] || '';
-            if (catFilters.length > 2) category3 = catFilters[2] || '';
-
-            await loadAttractions(cityId, category1, category2, category3);
+            await loadAttractions(cityId, selectedCategories, selectedSubcategories);
         }
 
         /*
             Reset Attraction Filters
-            - Clears selected subcategories and reloads attractions without filters
+            - Clears selected subcategories and reloads attractions without subcategory filters
         */
         async function resetAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
-            const catFilters = selectedCategories;
-            let [category1, category2, category3] = ['', '', ''];
-            if (catFilters.length > 0) category1 = catFilters[0] || '';
-            if (catFilters.length > 1) category2 = catFilters[1] || '';
-            if (catFilters.length > 2) category3 = catFilters[2] || '';
 
             selectedSubcategories = [];
             updateSelectedSubcategories();
 
             // Reload attractions without any subcategory filters
-            await loadAttractions(cityId, category1, category2, category3);
+            await loadAttractions(cityId, selectedCategories, selectedSubcategories);
         }
 
         /*
