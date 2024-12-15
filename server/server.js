@@ -32,7 +32,4 @@ app.get('/cityNumRoutesAndAvgDist', routes.cityNumRoutesAndAvgDist);
 app.get('/subattractions', routes.route_subattractions);
 app.get('/cityrankbyattractionsbackup', routes.rankCitiesByUniqueAttractionsBackup);
 
-// Do not listen on a port - this is serverless
-// app.listen(...) is removed
-
 module.exports = app;
