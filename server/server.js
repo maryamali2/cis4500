@@ -1,4 +1,3 @@
-// server/server.js
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -7,11 +6,14 @@ const routes = require('./routes');
 const app = express();
 app.use(cors({ origin: '*' }));
 
-// Serve static files if you have any (optional)
-// In this example, we directly send index.html from a nested directory.
+// Serve index.html at the root
 app.get('/', (req, res) => {
-  // Adjust the path relative to server.js
   res.sendFile(path.join(__dirname, '../client/src/pages/index.html'));
+});
+
+// Serve routes.html at /routes.html
+app.get('/routes.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/src/pages/routes.html'));
 });
 
 // Define the API endpoints as before
