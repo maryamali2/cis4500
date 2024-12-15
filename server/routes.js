@@ -352,7 +352,7 @@ const rankCitiesByUniqueAttractions = async function(req, res) {
   );
 }
 
-// Route 9.5: GET /cityrankbyattractionsbackup?cityIds=19511,25090,17705,...
+// Route 10: GET /cityrankbyattractionsbackup?cityIds=19511,25090,17705,...
 const rankCitiesByUniqueAttractionsBackup = async function(req, res) {
   const cityIds = req.query.cityIds; 
   if (!cityIds) {
@@ -386,7 +386,7 @@ const rankCitiesByUniqueAttractionsBackup = async function(req, res) {
   );
 }
 
-// Route 10: GET /randomAttraction?state=Florida
+// Route 11: GET /randomAttraction?state=Florida
 const randomAttraction = async function(req, res) {
   const state = req.query.state;
   connection.query(
@@ -417,7 +417,7 @@ const randomAttraction = async function(req, res) {
   );
 }
 
-// Route 10: GET /backupAttractions?cityId=11901
+// Route 12: GET /backupAttractions?cityId=11901
 const backupAttractions = async function(req, res) {
   const cityId = parseInt(req.query.cityId,10);
   if (!cityId) {
@@ -445,9 +445,7 @@ const backupAttractions = async function(req, res) {
   );
 }
 
-// Route 11: GET /cityNumRoutesAndAvgDist?cityId=11901
-// This query returns how many cities this city connects to as a source and the average distance
-// of these pairwise routes
+// Route 13: GET /cityNumRoutesAndAvgDist?cityId=11901
 const cityNumRoutesAndAvgDist = async function(req, res) {
   const cityId = parseInt(req.query.cityId,10);
   if (!cityId) {
@@ -469,7 +467,7 @@ const cityNumRoutesAndAvgDist = async function(req, res) {
   );
 }
 
-// Route 12: GET /subattractions?cityId=19511&subcategory1=Food&subcategory2=...
+// Route 14: GET /subattractions?cityId=19511&subcategory1=Food&subcategory2=...
 const route_subattractions = async function (req, res) {
   const id = parseInt(req.query.cityId, 10);
   const subcategory1 = req.query.subcategory1;
