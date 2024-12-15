@@ -317,7 +317,7 @@
             <p id="city-popdensity"></p>
 
             <!-- Subcategory Filtering within City Modal -->
-            <h3>Available Subcategories (Top 20):</h3>
+            <h3>Available Subcategories:</h3>
             <div id="subcategory-select" class="custom-select" style="position: relative;">
                 <input type="text" id="subcategory-input" placeholder="Select Subcategories" readonly>
                 <div class="options" id="subcategory-options" style="position: absolute;"></div>
@@ -364,6 +364,7 @@
 
         let allRoutes = []; // Stores all fetched routes
         let selectedCategories = []; // Stores user-selected categories
+        let selectedSubcategories = []; // Stores user-selected subcategories
         let filters = JSON.parse(localStorage.getItem('filters')) || { categories: [], sortBy: 'distance' };
         const formData = JSON.parse(localStorage.getItem('formData'));
 
@@ -391,30 +392,6 @@
             'Public Services & Government'
         ];
 
-        /* Predefined Subcategories for Filtering */
-        const predefinedSubcategories = [
-            'Museums',
-            'Parks',
-            'Historical Sites',
-            'Theaters',
-            'Sports Venues',
-            'Concert Halls',
-            'Art Galleries',
-            'Zoos',
-            'Aquariums',
-            'Botanical Gardens',
-            'Amusement Parks',
-            'Landmarks',
-            'Shopping Centers',
-            'Restaurants',
-            'Nightclubs',
-            'Cafes',
-            'Bars',
-            'Bakeries',
-            'Ice Cream Shops',
-            'Breweries'
-        ];
-
         /* Populate Category Options in Filter Section */
         const categoryOptionsContainer = document.getElementById('category-options');
         sampleCategories.forEach(category => {
@@ -423,16 +400,6 @@
             optionDiv.dataset.value = category;
             optionDiv.addEventListener('click', () => selectCategory(optionDiv)); // Event listener for selecting a category
             categoryOptionsContainer.appendChild(optionDiv);
-        });
-
-        /* Populate Subcategory Options in City Modal */
-        const subcategoryOptionsContainer = document.getElementById('subcategory-options');
-        predefinedSubcategories.forEach(subcat => {
-            const optionDiv = document.createElement('div');
-            optionDiv.textContent = subcat;
-            optionDiv.dataset.value = subcat;
-            optionDiv.addEventListener('click', () => selectSubcategory(optionDiv)); // Event listener for selecting a subcategory
-            subcategoryOptionsContainer.appendChild(optionDiv);
         });
 
         /* Display Selected Categories as Tags */
@@ -492,7 +459,6 @@
 
         /* Display Selected Subcategories as Tags */
         const selectedSubcategoriesContainer = document.getElementById('selected-subcategories');
-        let selectedSubcategories = [];
 
         function updateSelectedSubcategories() {
             selectedSubcategoriesContainer.innerHTML = '';
@@ -869,6 +835,7 @@
         /*
             Open City Modal
             - Displays detailed information about a selected city
+            - Dynamically fetches and displays subcategories based on the city's attractions
             - Calls loadAttractions to display attractions within the city
         */
         async function openCityModal(route, cityName, cityState, cityInfo=null) {
@@ -885,6 +852,10 @@
             cityRouteStats.textContent = '';
             randomAttractionInfo.textContent = '';
             attractionFilterSuccess.textContent = '';
+
+            // Reset selectedSubcategories to ensure no filters are applied initially
+            selectedSubcategories = [];
+            updateSelectedSubcategories();
 
             // Fetch city info if not provided
             if (!cityInfo) {
@@ -941,8 +912,62 @@
                 `;
             }
 
-            // Load attractions based on selected categories and subcategories
-            await loadAttractions(cityInfo.cityid, selectedCategories, selectedSubcategories);
+            /* 
+                Fetch Subcategories for the City by calling /attractions endpoint and extracting unique subcategories
+                - Dynamically populate subcategory dropdown based on the city's attractions
+            */
+            try {
+                // Fetch all attractions for the city to extract unique subcategories
+                let attractionsUrl = `http://localhost:8080/attractions?cityId=${cityInfo.cityid}`;
+                if (selectedCategories.length > 0) {
+                    // Only include category parameters if categories are selected
+                    attractionsUrl += `&category1=${encodeURIComponent(selectedCategories[0])}`;
+                    if (selectedCategories[1]) attractionsUrl += `&category2=${encodeURIComponent(selectedCategories[1])}`;
+                    if (selectedCategories[2]) attractionsUrl += `&category3=${encodeURIComponent(selectedCategories[2])}`;
+                }
+
+                const attractionsRes = await fetch(attractionsUrl);
+                const attractionsData = await attractionsRes.json();
+
+                // Extract unique subcategories from the fetched attractions
+                const uniqueSubcategories = new Set();
+                attractionsData.forEach(attraction => {
+                    if (attraction.subcategories) {
+                        attraction.subcategories.split(',').forEach(sub => {
+                            uniqueSubcategories.add(sub.trim());
+                        });
+                    }
+                });
+
+                const subcategoriesArray = Array.from(uniqueSubcategories);
+
+                // Populate the subcategory dropdown with the unique subcategories
+                const subcategoryOptionsContainer = document.getElementById('subcategory-options');
+                subcategoryOptionsContainer.innerHTML = ''; // Clear any existing options
+
+                if (subcategoriesArray.length === 0) {
+                    // If no subcategories are found, display a message
+                    const noSubs = document.createElement('div');
+                    noSubs.textContent = 'No subcategories available.';
+                    noSubs.style.padding = '10px';
+                    subcategoryOptionsContainer.appendChild(noSubs);
+                } else {
+                    subcategoriesArray.forEach(subcat => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.textContent = subcat;
+                        optionDiv.dataset.value = subcat;
+                        optionDiv.addEventListener('click', () => selectSubcategory(optionDiv)); // Event listener for selecting a subcategory
+                        subcategoryOptionsContainer.appendChild(optionDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching subcategories:', error);
+                const subcategoryOptionsContainer = document.getElementById('subcategory-options');
+                subcategoryOptionsContainer.innerHTML = '<div style="padding:10px;">Error loading subcategories.</div>';
+            }
+
+            // Load attractions without any subcategory filters initially
+            await loadAttractions(cityInfo.cityid);
 
             // Display the city modal
             cityModal.style.display = 'block';
@@ -958,12 +983,12 @@
 
         /*
             Load Attractions
-            - Fetches all attractions for a city by calling /attractions endpoint
-            - Filters attractions on the frontend based on selected categories and subcategories
+            - Fetches attractions for a city by calling /attractions endpoint with selected categories
+            - Filters attractions on the frontend based on selected subcategories
             - Displays backup attractions by calling /backupAttractions if no matches are found
             - Provides user feedback through success messages
         */
-        async function loadAttractions(cityId, categories, subcategories) {
+        async function loadAttractions(cityId) {
             const attractionsList = document.getElementById('attractions-list');
             const attractionFilterSuccess = document.getElementById('attraction-filter-success');
             attractionsList.innerHTML = '';
@@ -972,8 +997,15 @@
             let allAttractions = [];
 
             try {
-                // Fetch all attractions for the city
-                const attractionUrl = `http://localhost:8080/attractions?cityId=${cityId}`;
+                // Build the URL based on whether categories are selected
+                let attractionUrl = `http://localhost:8080/attractions?cityId=${cityId}`;
+                if (selectedCategories.length > 0) {
+                    attractionUrl += `&category1=${encodeURIComponent(selectedCategories[0])}`;
+                    if (selectedCategories[1]) attractionUrl += `&category2=${encodeURIComponent(selectedCategories[1])}`;
+                    if (selectedCategories[2]) attractionUrl += `&category3=${encodeURIComponent(selectedCategories[2])}`;
+                }
+
+                // Fetch attractions for the city with selected categories (if any)
                 const res = await fetch(attractionUrl);
                 allAttractions = await res.json();
             } catch (error) {
@@ -989,50 +1021,58 @@
 
             let filteredAttractions = allAttractions;
 
-            if (categories.length > 0) {
-                // Filter attractions based on selected categories
-                filteredAttractions = filteredAttractions.filter(attraction => {
-                    if (!attraction.categories) return false;
-                    const attractionCategories = attraction.categories.split(',').map(cat => cat.trim());
-                    return categories.some(selectedCat => attractionCategories.includes(selectedCat));
-                });
-            }
-
-            if (subcategories.length > 0) {
-                // Further filter attractions based on selected subcategories
+            // Filter based on selected subcategories if any
+            if (selectedSubcategories.length > 0) {
                 filteredAttractions = filteredAttractions.filter(attraction => {
                     if (!attraction.subcategories) return false;
                     const attractionSubcategories = attraction.subcategories.split(',').map(sub => sub.trim());
-                    return subcategories.some(selectedSubcat => attractionSubcategories.includes(selectedSubcat));
+                    return selectedSubcategories.some(selectedSubcat => attractionSubcategories.includes(selectedSubcat));
                 });
             }
 
             if (filteredAttractions.length === 0) {
                 // If no attractions match the filters, attempt to fetch backup attractions
                 try {
-                    const backupUrl = `http://localhost:8080/backupAttractions?cityId=${cityId}`;
+                    let backupUrl = `http://localhost:8080/backupAttractions?cityId=${cityId}`;
+                    if (selectedCategories.length > 0) {
+                        backupUrl += `&category1=${encodeURIComponent(selectedCategories[0])}`;
+                        if (selectedCategories[1]) backupUrl += `&category2=${encodeURIComponent(selectedCategories[1])}`;
+                        if (selectedCategories[2]) backupUrl += `&category3=${encodeURIComponent(selectedCategories[2])}`;
+                    }
+
                     const backupRes = await fetch(backupUrl);
                     const backupData = await backupRes.json();
 
                     if (Array.isArray(backupData) && backupData.length > 0) {
+                        // Additionally filter backup attractions based on subcategories if any
                         backupData.forEach(attraction => {
+                            if (selectedSubcategories.length > 0) {
+                                if (!attraction.subcategories) return;
+                                const attractionSubcategories = attraction.subcategories.split(',').map(sub => sub.trim());
+                                if (!selectedSubcategories.some(selectedSubcat => attractionSubcategories.includes(selectedSubcat))) {
+                                    return; // Skip attractions that don't match subcategories
+                                }
+                            }
+
                             const li = document.createElement('li');
                             const attName = attraction.attraction || attraction.name; 
                             const address = attraction.address ? attraction.address : 'No address provided';
                             const rating = attraction.rating ? attraction.rating : 'N/A';
                             const categories = attraction.categories ? attraction.categories : 'N/A';
+                            const subcategories = attraction.subcategories ? attraction.subcategories : 'N/A';
 
                             li.innerHTML = `
                                 <div class="attraction-details">
                                     <strong>${attName}</strong><br>
                                     Address: ${address}<br>
                                     Rating: ${rating}<br>
-                                    Categories: ${categories}
+                                    Categories: ${categories}<br>
+                                    Subcategories: ${subcategories}
                                 </div>
                             `;
                             attractionsList.appendChild(li);
                         });
-                        attractionFilterSuccess.textContent = 'Filters applied successfully!';
+                        attractionFilterSuccess.textContent = 'Displayed backup attractions matching subcategories.';
                     } else {
                         const li = document.createElement('li');
                         li.textContent = 'No attractions found.';
@@ -1044,25 +1084,27 @@
                     attractionsList.innerHTML = '<li>Error loading attractions.</li>';
                 }
             } else {
-                // Display filtered attractions
+                // Display filtered attractions (based only on categories)
                 filteredAttractions.forEach(attraction => {
                     const li = document.createElement('li');
                     const attName = attraction.attraction || attraction.name; 
                     const address = attraction.address ? attraction.address : 'No address provided';
                     const rating = attraction.rating ? attraction.rating : 'N/A';
                     const categories = attraction.categories ? attraction.categories : 'N/A';
+                    const subcategories = attraction.subcategories ? attraction.subcategories : 'N/A';
 
                     li.innerHTML = `
                         <div class="attraction-details">
                             <strong>${attName}</strong><br>
                             Address: ${address}<br>
                             Rating: ${rating}<br>
-                            Categories: ${categories}
+                            Categories: ${categories}<br>
+                            Subcategories: ${subcategories}
                         </div>
                     `;
                     attractionsList.appendChild(li);
                 });
-                attractionFilterSuccess.textContent = 'Filters applied successfully!';
+                attractionFilterSuccess.textContent = 'Attractions loaded successfully!';
                 setTimeout(() => {
                     attractionFilterSuccess.textContent = '';
                 }, 3000);
@@ -1071,11 +1113,11 @@
 
         /*
             Apply Attraction Filters
-            - Reloads attractions based on current selected categories and subcategories
+            - Reloads attractions based on current selected subcategories
         */
         async function applyAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
-            await loadAttractions(cityId, selectedCategories, selectedSubcategories);
+            await loadAttractions(cityId);
         }
 
         /*
@@ -1089,7 +1131,7 @@
             updateSelectedSubcategories();
 
             // Reload attractions without any subcategory filters
-            await loadAttractions(cityId, selectedCategories, selectedSubcategories);
+            await loadAttractions(cityId);
         }
 
         /*
