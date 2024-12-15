@@ -5,6 +5,7 @@
     <title>routes.</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,...">
     <style>
+        /* General Styling */
         body {
             font-family: 'Garamond', serif;
             margin: 0;
@@ -14,6 +15,7 @@
             box-sizing: border-box;
         }
 
+        /* Top Section: Header and Back Button */
         .top-section {
             text-align: center;
             margin-bottom: 30px;
@@ -32,6 +34,7 @@
             font-size: 18px;
         }
 
+        /* Filter Section: Sorting and Category Filtering */
         .filter-section {
             margin-bottom: 30px;
             text-align: center;
@@ -135,6 +138,7 @@
             background-color: #e0e0e0;
         }
 
+        /* Routes List Styling */
         .routes-list {
             list-style-type: none;
             padding: 0;
@@ -156,6 +160,7 @@
             background-color: #f0f0f0;
         }
 
+        /* City Route Styling */
         .city-route {
             text-decoration: underline;
             cursor: pointer;
@@ -165,6 +170,7 @@
             text-decoration: underline;
         }
 
+        /* Modal Styling */
         .modal {
             display: none;
             position: fixed;
@@ -212,12 +218,14 @@
             margin-bottom: 10px;
         }
 
+        /* Results Count Styling */
         .results-count {
             font-size: 18px;
             margin-top: 10px;
             font-family: 'Garamond', serif;
         }
 
+        /* Information Sections within Modal */
         .info-section {
             margin-top: 20px;
         }
@@ -246,18 +254,22 @@
     </style>
 </head>
 <body>
+    <!-- Top Section: App Title and Back Button -->
     <div class="top-section">
         <h1>routes.</h1>
         <button onclick="goBack()" class="minimal-button back-button">Back</button>
     </div>
 
+    <!-- Filter Section: Sorting and Category Filtering -->
     <div class="filter-section">
+        <!-- Sort By Dropdown -->
         <label for="sort-by">Sort By:</label>
         <select id="sort-by" class="minimal-input" style="font-family: 'Garamond', serif; font-size: 16px; padding: 10px; width: 100%; max-width: 500px; margin: 0 auto; border: 1px solid #ccc; box-sizing: border-box;">
             <option value="distance">Total Distance (Ascending)</option>
             <option value="distance-desc">Total Distance (Descending)</option>
         </select>
 
+        <!-- Category Filtering -->
         <label for="categories">Filter By Categories (Max 3):</label>
         <div id="category-select" class="custom-select">
             <input type="text" id="category-input" placeholder="Select Categories" readonly>
@@ -267,15 +279,18 @@
         <div id="category-error" class="error-message"></div>
         <div id="category-success" class="success-message"></div>
 
+        <!-- Apply and Reset Filters Buttons -->
         <button onclick="applyFilters()" class="minimal-button">Apply Filters</button>
         <button onclick="resetFilters()" class="minimal-button">Reset Filters</button>
     </div>
 
+    <!-- Results Count Display -->
     <div class="results-count" id="results-count">Total Results: 0</div>
 
+    <!-- Routes List: Displaying Available Routes -->
     <ul id="routes-list" class="routes-list"></ul>
 
-    <!-- Route Modal -->
+    <!-- Route Modal: Displays Detailed Information About a Route -->
     <div id="route-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeRouteModal()">&times;</span>
@@ -293,7 +308,7 @@
         </div>
     </div>
 
-    <!-- City Modal -->
+    <!-- City Modal: Displays Detailed Information About a City -->
     <div id="city-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeCityModal()">&times;</span>
@@ -301,6 +316,7 @@
             <p id="city-coordinates">Latitude: , Longitude: </p>
             <p id="city-popdensity"></p>
 
+            <!-- Subcategory Filtering within City Modal -->
             <h3>Available Subcategories (Top 20):</h3>
             <div id="subcategory-select" class="custom-select" style="position: relative;">
                 <input type="text" id="subcategory-input" placeholder="Select Subcategories" readonly>
@@ -308,14 +324,18 @@
                 <div class="selected-options" id="selected-subcategories"></div>
             </div>
 
+            <!-- Success Message for Attraction Filtering -->
             <div id="attraction-filter-success" class="success-message"></div>
 
+            <!-- Apply and Reset Attraction Filters Buttons -->
             <button onclick="applyAttractionFilters()" class="minimal-button">Apply Filters</button>
             <button onclick="resetAttractionFilters()" class="minimal-button">Reset Filters</button>
 
+            <!-- Attractions List: Displays Attractions in the City -->
             <h3>Attractions:</h3>
             <ul id="attractions-list"></ul>
 
+            <!-- Additional Information Sections -->
             <div class="info-section">
                 <h3>Neighboring City Recommendations</h3>
                 <p id="city-recs-info"></p>
@@ -334,11 +354,20 @@
     </div>
 
     <script>
-        let allRoutes = [];
-        let selectedCategories = [];
+        /*
+            Frontend Logic for Routes Page
+            - Retrieves form data from localStorage
+            - Fetches routes based on user input by calling /routes endpoint
+            - Displays routes and allows filtering by categories
+            - Handles modals for route and city details
+        */
+
+        let allRoutes = []; // Stores all fetched routes
+        let selectedCategories = []; // Stores user-selected categories
         let filters = JSON.parse(localStorage.getItem('filters')) || { categories: [], sortBy: 'distance' };
         const formData = JSON.parse(localStorage.getItem('formData'));
 
+        /* Sample Categories for Filtering */
         const sampleCategories = [
             'Event Planning & Services',
             'Local Flavor',
@@ -362,15 +391,17 @@
             'Public Services & Government'
         ];
 
+        /* Populate Category Options in Filter Section */
         const categoryOptionsContainer = document.getElementById('category-options');
         sampleCategories.forEach(category => {
             const optionDiv = document.createElement('div');
             optionDiv.textContent = category;
             optionDiv.dataset.value = category;
-            optionDiv.addEventListener('click', () => selectCategory(optionDiv));
+            optionDiv.addEventListener('click', () => selectCategory(optionDiv)); // Event listener for selecting a category
             categoryOptionsContainer.appendChild(optionDiv);
         });
 
+        /* Display Selected Categories as Tags */
         const selectedCategoriesContainer = document.getElementById('selected-categories');
         selectedCategories = filters.categories || [];
 
@@ -383,7 +414,7 @@
                 const removeSpan = document.createElement('span');
                 removeSpan.classList.add('remove');
                 removeSpan.textContent = '×';
-                removeSpan.addEventListener('click', () => removeCategory(category));
+                removeSpan.addEventListener('click', () => removeCategory(category)); // Event listener for removing a category
                 tagDiv.appendChild(removeSpan);
                 selectedCategoriesContainer.appendChild(tagDiv);
             });
@@ -392,10 +423,11 @@
             document.getElementById('category-success').textContent = '';
         }
 
+        /* Function to Select a Category */
         function selectCategory(optionDiv) {
             const category = optionDiv.dataset.value;
             if (!selectedCategories.includes(category)) {
-                if (selectedCategories.length < 3) {
+                if (selectedCategories.length < 3) { // Limit to 3 categories
                     selectedCategories.push(category);
                     updateSelectedCategories();
                 } else {
@@ -404,25 +436,36 @@
             }
         }
 
+        /* Function to Remove a Selected Category */
         function removeCategory(category) {
             selectedCategories = selectedCategories.filter(cat => cat !== category);
             updateSelectedCategories();
         }
 
+        /* Toggle Category Options Display on Input Click */
         const categoryInput = document.getElementById('category-input');
         categoryInput.addEventListener('click', () => {
             const options = document.getElementById('category-options');
             options.style.display = (options.style.display === 'block') ? 'none' : 'block';
         });
 
+        /* Close Category Options Dropdown When Clicking Outside */
         document.addEventListener('click', (event) => {
             if (!document.getElementById('category-select').contains(event.target)) {
                 document.getElementById('category-options').style.display = 'none';
             }
         });
 
+        /* Set Sort By Dropdown to Saved Filter */
         document.getElementById('sort-by').value = filters.sortBy;
 
+        /*
+            Fetch Routes Data
+            - Calls the /routes endpoint with user input parameters
+            - Returns fetched route data
+            - Query Example:
+              /routes?numInt=2&startCity=NewYork&startState=NY&endCity=LosAngeles&endState=CA
+        */
         async function fetchRoutesData(numInt, startCity, startState, endCity, endState) {
             const url = `http://localhost:8080/routes?numInt=${numInt}&startCity=${encodeURIComponent(startCity)}&startState=${encodeURIComponent(startState)}&endCity=${encodeURIComponent(endCity)}&endState=${encodeURIComponent(endState)}`;
             const res = await fetch(url);
@@ -430,6 +473,11 @@
             return data;
         }
 
+        /*
+            Convert Routes Response
+            - Processes raw route data into a structured format
+            - Organizes cities within each route based on the number of intermediate cities
+        */
         function convertRoutesResponse(data, numInt) {
             return data.map(row => {
                 let routeCities = [];
@@ -468,6 +516,11 @@
             });
         }
 
+        /*
+            Load Route City IDs
+            - Fetches city IDs for all cities in a route by calling the /cities endpoint
+            - Returns an array of city IDs
+        */
         async function loadRouteCityIds(route) {
             const cityIds = [];
             for (const cityObj of route.cities) {
@@ -480,7 +533,15 @@
             return cityIds;
         }
 
-        // Updated showRouteCityRank with fallback to random ordering
+        /*
+            Show Route City Rank
+            - Displays the ranking of cities in a route based on unique attractions
+            - Calls /cityrankbyattractions and falls back to /cityrankbyattractionsbackup
+            - If both fail, displays a random ordering of cities
+            - Query Examples:
+              /cityrankbyattractions?cityIds=19511,25090,17705,...
+              /cityrankbyattractionsbackup?cityIds=19511,25090,17705,...
+        */
         async function showRouteCityRank(route) {
             const rankElement = document.getElementById('route-city-rank');
             rankElement.textContent = '';
@@ -493,12 +554,12 @@
             let rankRes = await fetch(rankUrl);
             let rankData = await rankRes.json();
             if (!rankData || rankData.length === 0) {
-                // Fallback to backup
+                // Fallback to backup ranking
                 const backupUrl = `http://localhost:8080/cityrankbyattractionsbackup?cityIds=${cityIds.join(',')}`;
                 rankRes = await fetch(backupUrl);
                 rankData = await rankRes.json();
                 if (!rankData || rankData.length === 0) {
-                    // If both primary and backup fail, display random ordering
+                    // If both rankings fail, display cities in random order
                     const shuffledCities = shuffleArray(route.cities).map(c => `${c.city}`);
                     rankElement.textContent = `City Ranking: ${shuffledCities.join(' > ')}`;
                     return;
@@ -519,7 +580,10 @@
             }
         }
 
-        // Utility function to shuffle an array
+        /*
+            Utility Function: Shuffle Array
+            - Randomizes the order of elements in an array
+        */
         function shuffleArray(array) {
             const shuffled = array.slice();
             for (let i = shuffled.length - 1; i > 0; i--) {
@@ -529,6 +593,12 @@
             return shuffled;
         }
 
+        /*
+            Show Route Top Categories
+            - Displays top categories for the entire route by calling /topCityCategories
+            - Query Example:
+              /topCityCategories?cityIds=19511,25090,17705,...
+        */
         async function showRouteTopCategories(route) {
             const routeTopCategoriesList = document.getElementById('route-top-categories-list');
             routeTopCategoriesList.innerHTML = '';
@@ -558,6 +628,11 @@
             }
         }
 
+        /*
+            Load Routes
+            - Sorts routes based on user-selected filter
+            - Displays the list of routes in the UI
+        */
         function loadRoutes() {
             let routes = allRoutes;
             if (filters.sortBy === 'distance') {
@@ -574,6 +649,7 @@
             const routesList = document.getElementById('routes-list');
             routesList.innerHTML = '';
             routes.forEach((route, index) => {
+                // Create clickable city links within each route
                 const cityLinks = route.cities.map((cityObj) => {
                     return `<span class="city-route" data-city="${cityObj.city}" data-state="${cityObj.state}" data-route-index="${index}">${cityObj.city}</span>`;
                 });
@@ -583,19 +659,22 @@
                     Total Distance: ${route.distance} miles
                 `;
 
+                // Open route modal when route item is clicked (excluding city links)
                 li.addEventListener('click', (event) => {
                     if (!event.target.classList.contains('city-route')) {
                         openRouteModal(route);
                     }
                 });
 
+                // Add event listeners to city links to open city modal
                 li.querySelectorAll('.city-route').forEach(cityElement => {
                     cityElement.addEventListener('click', async (event) => {
-                        event.stopPropagation();
+                        event.stopPropagation(); // Prevent triggering parent click event
                         const cityName = event.target.dataset.city;
                         const cityState = event.target.dataset.state;
                         const routeIndex = event.target.dataset.routeIndex;
 
+                        // Fetch city info by calling /cities endpoint
                         const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityName)}&stateName=${encodeURIComponent(cityState)}`);
                         const cityInfo = await cityInfoRes.json();
                         if (cityInfo && cityInfo.cityid) {
@@ -611,6 +690,11 @@
             });
         }
 
+        /*
+            Apply Filters
+            - Updates filters based on user selection
+            - Reloads routes to reflect applied filters
+        */
         function applyFilters() {
             filters.sortBy = document.getElementById('sort-by').value;
             document.getElementById('category-success').textContent = 'Filters applied successfully!';
@@ -620,6 +704,11 @@
             loadRoutes();
         }
 
+        /*
+            Reset Filters
+            - Clears selected categories and resets sorting
+            - Reloads routes to remove all filters
+        */
         function resetFilters() {
             selectedCategories = [];
             updateSelectedCategories();
@@ -628,26 +717,38 @@
             loadRoutes();
         }
 
+        /*
+            Go Back Function
+            - Navigates the user back to the previous page
+        */
         function goBack() {
             window.history.back();
         }
 
+        /*
+            Open Route Modal
+            - Displays detailed information about a selected route
+            - Calls showRouteCityRank and showRouteTopCategories to populate modal content
+        */
         async function openRouteModal(route) {
             const routeModal = document.getElementById('route-modal');
             const routeInfo = document.getElementById('route-info');
             const routeCitiesList = document.getElementById('route-cities-list');
 
+            // Display route information
             const cityNames = route.cities.map(c => c.city);
             routeInfo.innerHTML = `
                 Route through ${cityNames.join(' ➔ ')}<br>
                 Total Distance: ${route.distance} miles
             `;
 
+            // List cities in the route with clickable links
             routeCitiesList.innerHTML = '';
             for (const cityObj of route.cities) {
                 const li = document.createElement('li');
                 li.innerHTML = `<span class="city-route" data-city="${cityObj.city}" data-state="${cityObj.state}">${cityObj.city}</span>`;
                 li.addEventListener('click', async () => {
+                    // Fetch city info by calling /cities endpoint
                     const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityObj.city)}&stateName=${encodeURIComponent(cityObj.state)}`);
                     const cityInfo = await cityInfoRes.json();
                     if (cityInfo && cityInfo.cityid) {
@@ -660,20 +761,27 @@
                 routeCitiesList.appendChild(li);
             }
 
+            // Display city rankings and top categories
             await showRouteCityRank(route);
             await showRouteTopCategories(route);
 
+            // Store current route in localStorage
             localStorage.setItem('currentRoute', JSON.stringify(route));
             routeModal.style.display = 'block';
         }
 
+        /*
+            Close Route Modal
+            - Hides the route details modal
+        */
         function closeRouteModal() {
             document.getElementById('route-modal').style.display = 'none';
         }
 
-        let selectedSubcategories = [];
+        let selectedSubcategories = []; // Stores selected subcategories within city modal
         const selectedSubcategoriesContainer = document.getElementById('selected-subcategories');
 
+        /* Display Selected Subcategories as Tags */
         function updateSelectedSubcategories() {
             selectedSubcategoriesContainer.innerHTML = '';
             if (selectedSubcategories.length === 0) {
@@ -689,12 +797,13 @@
                 const removeSpan = document.createElement('span');
                 removeSpan.classList.add('remove');
                 removeSpan.textContent = '×';
-                removeSpan.addEventListener('click', () => removeSubcategory(subcat));
+                removeSpan.addEventListener('click', () => removeSubcategory(subcat)); // Event listener for removing a subcategory
                 tagDiv.appendChild(removeSpan);
                 selectedSubcategoriesContainer.appendChild(tagDiv);
             });
         }
 
+        /* Function to Select a Subcategory */
         function selectSubcategory(optionDiv) {
             const subcat = optionDiv.dataset.value;
             if (!selectedSubcategories.includes(subcat)) {
@@ -703,11 +812,17 @@
             }
         }
 
+        /* Function to Remove a Selected Subcategory */
         function removeSubcategory(subcat) {
             selectedSubcategories = selectedSubcategories.filter(sc => sc !== subcat);
             updateSelectedSubcategories();
         }
 
+        /*
+            Open City Modal
+            - Displays detailed information about a selected city
+            - Calls loadAttractions to display attractions within the city
+        */
         async function openCityModal(route, cityName, cityState, cityInfo=null) {
             const cityModal = document.getElementById('city-modal');
             const cityCoordinatesElement = document.getElementById('city-coordinates');
@@ -717,11 +832,13 @@
             const randomAttractionInfo = document.getElementById('random-attraction-info');
             const attractionFilterSuccess = document.getElementById('attraction-filter-success');
 
+            // Clear previous modal content
             cityRecsInfo.textContent = '';
             cityRouteStats.textContent = '';
             randomAttractionInfo.textContent = '';
             attractionFilterSuccess.textContent = '';
 
+            // Fetch city info if not provided
             if (!cityInfo) {
                 const cityInfoRes = await fetch(`http://localhost:8080/cities?cityName=${encodeURIComponent(cityName)}&stateName=${encodeURIComponent(cityState)}`);
                 cityInfo = await cityInfoRes.json();
@@ -731,15 +848,17 @@
                 }
             }
 
+            // Display city information
             document.getElementById('city-name').textContent = `${cityName}, ${cityState} (City ID: ${cityInfo.cityid})`;
             cityCoordinatesElement.textContent = `Latitude: ${cityInfo.latitude}, Longitude: ${cityInfo.longitude}`;
             cityPopDensityElement.textContent = `Population: ${cityInfo.population}, Density: ${cityInfo.density}`;
 
+            // Store current city information in localStorage
             localStorage.setItem('lastCityId', cityInfo.cityid);
             localStorage.setItem('currentCity', cityName);
             localStorage.setItem('currentCityId', cityInfo.cityid);
 
-            // cityrecs
+            // Fetch Neighboring City Recommendations by calling /cityrecs endpoint
             const recsRes = await fetch(`http://localhost:8080/cityrecs?cityId=${cityInfo.cityid}`);
             const recsData = await recsRes.json();
             if (recsData.length === 0) {
@@ -748,7 +867,7 @@
                 cityRecsInfo.textContent = recsData.join(', ');
             }
 
-            // cityNumRoutesAndAvgDist
+            // Fetch City Route Statistics by calling /cityNumRoutesAndAvgDist endpoint
             const routeStatsRes = await fetch(`http://localhost:8080/cityNumRoutesAndAvgDist?cityId=${cityInfo.cityid}`);
             const routeStatsData = await routeStatsRes.json();
             if (routeStatsData.length === 0) {
@@ -758,13 +877,13 @@
                 cityRouteStats.textContent = `This city connects to ${stats.numroutes} routes with an average distance of ${stats.avg_distance.toFixed(2)} miles.`;
             }
 
-            // randomAttraction by state
+            // Fetch a Random Attraction by calling /randomAttraction endpoint
             const randomRes = await fetch(`http://localhost:8080/randomAttraction?state=${encodeURIComponent(cityInfo.state)}`);
             const randomData = await randomRes.json();
             if (!randomData || !randomData.attraction) {
                 randomAttractionInfo.textContent = 'No random attraction found.';
             } else {
-                // Displaying compact details
+                // Display compact details of the random attraction
                 const address = randomData.address ? randomData.address : 'No address provided';
                 randomAttractionInfo.innerHTML = `
                     <strong>${randomData.attraction}</strong><br>
@@ -774,7 +893,10 @@
                 `;
             }
 
-            // subcategories
+            /* 
+                Fetch Subcategories for the City by calling /subcategories endpoint
+                - Limits to top 20 subcategories
+            */
             const catFilters = selectedCategories;
             let [category1, category2, category3] = ['', '', ''];
             if (catFilters.length > 0) category1 = catFilters[0] || '';
@@ -783,7 +905,7 @@
 
             const subRes = await fetch(`http://localhost:8080/subcategories?cityId=${cityInfo.cityid}&category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}&category3=${encodeURIComponent(category3)}`);
             let subData = await subRes.json();
-            subData = subData.slice(0, 20);
+            subData = subData.slice(0, 20); // Limit to top 20 subcategories
             const subcategoryOptionsContainer = document.getElementById('subcategory-options');
             subcategoryOptionsContainer.innerHTML = '';
             if (subData.length === 0) {
@@ -796,20 +918,33 @@
                     const optionDiv = document.createElement('div');
                     optionDiv.textContent = subcat;
                     optionDiv.dataset.value = subcat;
-                    optionDiv.addEventListener('click', () => selectSubcategory(optionDiv));
+                    optionDiv.addEventListener('click', () => selectSubcategory(optionDiv)); // Event listener for selecting a subcategory
                     subcategoryOptionsContainer.appendChild(optionDiv);
                 });
             }
 
+            // Load attractions based on selected categories and subcategories
             await loadAttractions(cityInfo.cityid, category1, category2, category3);
 
+            // Display the city modal
             cityModal.style.display = 'block';
         }
 
+        /*
+            Close City Modal
+            - Hides the city details modal
+        */
         function closeCityModal() {
             document.getElementById('city-modal').style.display = 'none';
         }
 
+        /*
+            Load Attractions
+            - Fetches all attractions for a city by calling /attractions endpoint
+            - Filters attractions on the frontend based on selected categories
+            - Displays backup attractions by calling /backupAttractions if no matches are found
+            - Provides user feedback through success messages
+        */
         async function loadAttractions(cityId, category1, category2, category3) {
             const attractionsList = document.getElementById('attractions-list');
             const attractionFilterSuccess = document.getElementById('attraction-filter-success');
@@ -870,7 +1005,7 @@
                             `;
                             attractionsList.appendChild(li);
                         });
-                        attractionFilterSuccess.textContent = 'Filters applied succesfully!';
+                        attractionFilterSuccess.textContent = 'Displayed backup attractions.';
                     } else {
                         const li = document.createElement('li');
                         li.textContent = 'No attractions found.';
@@ -907,6 +1042,10 @@
             }
         }
 
+        /*
+            Apply Attraction Filters
+            - Reloads attractions based on current selected categories
+        */
         async function applyAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
             const catFilters = selectedCategories;
@@ -918,6 +1057,10 @@
             await loadAttractions(cityId, category1, category2, category3);
         }
 
+        /*
+            Reset Attraction Filters
+            - Clears selected subcategories and reloads attractions without filters
+        */
         async function resetAttractionFilters() {
             const cityId = localStorage.getItem('currentCityId');
             const catFilters = selectedCategories;
@@ -933,6 +1076,12 @@
             await loadAttractions(cityId, category1, category2, category3);
         }
 
+        /*
+            On Page Load:
+            - Validates presence of necessary form data
+            - Fetches routes based on user input by calling /routes endpoint
+            - Displays routes using loadRoutes function
+        */
         window.onload = async function() {
             if (!formData || !formData.sourceCity || !formData.sourceState || !formData.destinationCity || !formData.destinationState || formData.maxCities === undefined) {
                 alert('Please fill out the form correctly.');
@@ -948,6 +1097,7 @@
             const endCity = formData.destinationCity;
             const endState = formData.destinationState;
 
+            // Fetch routes by calling /routes endpoint
             const routesData = await fetchRoutesData(numInt, startCity, startState, endCity, endState);
 
             if (!Array.isArray(routesData) || routesData.length === 0) {
@@ -955,10 +1105,15 @@
                 return;
             }
 
+            // Convert and store routes data
             allRoutes = convertRoutesResponse(routesData, numInt);
             loadRoutes();
         };
 
+        /*
+            Close Modals When Clicking Outside of Them
+            - Listens for window clicks to close open modals if the click is outside the modal content
+        */
         window.onclick = function(event) {
             const routeModal = document.getElementById('route-modal');
             const cityModal = document.getElementById('city-modal');
